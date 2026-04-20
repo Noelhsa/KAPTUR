@@ -1,0 +1,55 @@
+name: proyecto_kaptur
+description: Aplicación de inspecciones, capacitación y gestión operativa.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Navegación ──────────────────────────────
+  go_router: ^13.2.0
+
+  # ── Manejo de estado ────────────────────────
+  flutter_riverpod: ^2.5.1
+
+  # ── Conexión con API REST (Node.js) ─────────
+  dio: ^5.4.3+1
+
+  # ── Almacenamiento local ─────────────────────
+  shared_preferences: ^2.2.3
+
+  # ── Fuentes e íconos ─────────────────────────
+  google_fonts: ^6.2.1
+
+  # ── Utilidades ───────────────────────────────
+  equatable: ^2.0.5        # comparar objetos fácilmente
+  intl: ^0.19.0            # fechas y formatos
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  mockito: ^5.4.4          # para pruebas unitarias
+  build_runner: ^2.4.9     # genera código automático
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - recursos/imagenes/
+    - recursos/iconos/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: recursos/fuentes/Poppins-Regular.ttf
+        - asset: recursos/fuentes/Poppins-Medium.ttf
+          weight: 500
+        - asset: recursos/fuentes/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: recursos/fuentes/Poppins-Bold.ttf
+          weight: 700
