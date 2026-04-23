@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'pantalla_detalle_inspecciones.dart';
-import 'pantalla_nueva_inspecciones.dart';
 
 class PantallaInspecciones extends StatefulWidget {
   const PantallaInspecciones({super.key});
@@ -11,7 +10,6 @@ class PantallaInspecciones extends StatefulWidget {
 }
 
 class _PantallaInspeccionesState extends State<PantallaInspecciones> {
-  // Filtro activo
   String _filtroActivo = 'Todos';
 
   final List<String> _filtros = [
@@ -22,7 +20,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     'Por confirmar',
   ];
 
-  // Datos de prueba
   final List<Map<String, String>> _inspecciones = [
     {
       'id': '001',
@@ -61,7 +58,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     },
   ];
 
-  // Filtra la lista según el filtro activo
   List<Map<String, String>> get _inspeccionesFiltradas {
     if (_filtroActivo == 'Todos') return _inspecciones;
     return _inspecciones
@@ -85,28 +81,9 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const PantallaNuevaInspeccion(),
-          ),
-        ),
-        backgroundColor: AppColors.orange,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Nueva',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-      ),
     );
   }
 
-  // ── Header ────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -119,24 +96,11 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.textSecondary,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'INSPECCIONES',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  letterSpacing: 4,
-                ),
-              ),
-            ],
+          Text(
+            'INSPECCIONES',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              letterSpacing: 4,
+            ),
           ),
           CircleAvatar(
             radius: 16,
@@ -148,7 +112,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     );
   }
 
-  // ── Filtros ───────────────────────────────────────────────
   Widget _buildFiltros() {
     return Container(
       height: 44,
@@ -164,7 +127,10 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
             onTap: () => setState(() => _filtroActivo = filtro),
             child: Container(
               margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
               decoration: BoxDecoration(
                 color: activo ? AppColors.orange : AppColors.surface,
                 borderRadius: BorderRadius.circular(20),
@@ -179,8 +145,7 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
                 style: TextStyle(
                   color: activo ? Colors.white : AppColors.textSecondary,
                   fontSize: 12,
-                  fontWeight:
-                  activo ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: activo ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
@@ -190,7 +155,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     );
   }
 
-  // ── Lista ─────────────────────────────────────────────────
   Widget _buildLista() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -206,7 +170,8 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => PantallaDetalleInspeccion(inspeccion: inspeccion),
+          builder: (_) =>
+              PantallaDetalleInspeccion(inspeccion: inspeccion),
         ),
       ),
       child: Container(
@@ -220,7 +185,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ícono lateral
             Container(
               width: 40,
               height: 40,
@@ -235,7 +199,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
               ),
             ),
             const SizedBox(width: 12),
-            // Contenido
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,13 +259,12 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     );
   }
 
-  // ── Estado vacío ──────────────────────────────────────────
   Widget _buildVacio() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.checklist_rounded,
             color: AppColors.textHint,
             size: 48,
@@ -320,7 +282,6 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     );
   }
 
-  // ── Pill de estado ────────────────────────────────────────
   Widget _buildEstadoPill(String estado) {
     Color color;
     Color bg;
