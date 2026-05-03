@@ -23,7 +23,7 @@ class PantallaInicio extends StatelessWidget {
       'estado': 'Por confirmar',
       // TODO: cambia la imagen en pantalla_inicio.dart
       // busca 'recursos/imagenes/aviso_industrial.jpg' y ponla aquí
-      'imagen': 'recursos/imagenes/aviso_industrial.jpg',
+      'imagen': 'recursos/imagenes/aviso_industrial.png',
     },
   ];
 
@@ -209,7 +209,7 @@ class PantallaInicio extends StatelessWidget {
             child: Image.asset(
               // TODO: cambia el nombre de la imagen del aviso
               // Línea de abajo → pon el nombre de tu imagen en recursos/imagenes/
-              aviso['imagen'] ?? 'recursos/imagenes/aviso_industrial.jpg',
+              aviso['imagen'] ?? 'recursos/imagenes/aviso_industrial.png',
               height: 130,
               width: double.infinity,
               fit: BoxFit.cover,

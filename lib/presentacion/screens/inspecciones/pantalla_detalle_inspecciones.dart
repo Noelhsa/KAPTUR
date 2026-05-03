@@ -1,13 +1,43 @@
 import 'package:flutter/material.dart';
-import '../../../config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 
-class PantallaDetalleInspeccion extends StatelessWidget {
+class PantallaDetalleInspeccion extends StatefulWidget {
   final Map<String, String> inspeccion;
   const PantallaDetalleInspeccion({super.key, required this.inspeccion});
 
   @override
+  State<PantallaDetalleInspeccion> createState() =>
+      _PantallaDetalleInspeccionState();
+}
+
+class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
+  bool _permisoExiste = false;
+  bool _permisoVigente = false;
+
+  final _folioController = TextEditingController();
+  final _instalacionController = TextEditingController();
+  final _tipoController = TextEditingController();
+  final _areaController = TextEditingController();
+  final _fechaController = TextEditingController();
+  final _horaController = TextEditingController();
+  final _notasController = TextEditingController();
+
+  @override
+  void dispose() {
+    _folioController.dispose();
+    _instalacionController.dispose();
+    _tipoController.dispose();
+    _areaController.dispose();
+    _fechaController.dispose();
+    _horaController.dispose();
+    _notasController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.light,
       body: SafeArea(
         child: Column(
           children: [
@@ -16,11 +46,10 @@ class PantallaDetalleInspeccion extends StatelessWidget {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSeccionInfo(context),
-                    const SizedBox(height: 16),
-                    _buildSeccionEstado(context),
+                    _buildFormulario(context),
+                    const SizedBox(height: 12),
+                    _buildAreaNotas(),
                   ],
                 ),
               ),
@@ -31,97 +60,152 @@ class PantallaDetalleInspeccion extends StatelessWidget {
     );
   }
 
+  // ── Header ────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      color: Colors.white,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textSecondary,
+              color: AppColors.navy,
               size: 18,
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            'DETALLE',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              letterSpacing: 4,
-            ),
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.navy,
+            child: const Icon(Icons.person, color: Colors.white, size: 20),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSeccionInfo(BuildContext context) {
+  // ── Formulario ────────────────────────────────────────────
+  Widget _buildFormulario(BuildContext context) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Folio #${inspeccion['id']}',
-            style: const TextStyle(
-              color: AppColors.textHint,
-              fontSize: 11,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            inspeccion['titulo'] ?? '',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+          const Text(
+            'Comenzar auditoría',
+            style: TextStyle(
+              color: AppColors.dark,
               fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 16),
-          _buildFila('Área', inspeccion['area'] ?? ''),
+
+          // Folio
+          _buildFilaCampo('Folio:', _folioController),
           const SizedBox(height: 10),
-          _buildFila('Fecha', inspeccion['fecha'] ?? ''),
+
+          // Instalación
+          _buildFilaCampo('Instalación:', _instalacionController),
           const SizedBox(height: 10),
-          _buildFila('Estado', inspeccion['estado'] ?? ''),
+
+          // Tipo de instalación
+          _buildFilaCampo('Tipo de Instalación:', _tipoController,
+              anchoEtiqueta: 130),
+          const SizedBox(height: 10),
+
+          // Área
+          _buildFilaCampo('Área:', _areaController),
+          const SizedBox(height: 10),
+
+          // Fecha y Hora en la misma fila
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilaCampo('Fecha:', _fechaController),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildFilaCampo('Hora:', _horaController),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Permiso de Trabajo
+          const Text(
+            'Permiso de Trabajo (PT):',
+            style: TextStyle(
+              color: AppColors.dark,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildCheckItem('Existe', _permisoExiste, (v) {
+            setState(() => _permisoExiste = v ?? false);
+          }),
+          const SizedBox(height: 4),
+          _buildCheckItem('Vigente', _permisoVigente, (v) {
+            setState(() => _permisoVigente = v ?? false);
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildFila(String etiqueta, String valor) {
+  Widget _buildFilaCampo(
+    String etiqueta,
+    TextEditingController controller, {
+    double anchoEtiqueta = 90,
+  }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 70,
+          width: anchoEtiqueta,
           child: Text(
             etiqueta,
-            style: const TextStyle(
-              color: AppColors.textHint,
+            style: TextStyle(
+              color: Colors.grey.shade600,
               fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
         Expanded(
-          child: Text(
-            valor,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+          child: Container(
+            height: 28,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextField(
+              controller: controller,
+              style: const TextStyle(
+                color: AppColors.dark,
+                fontSize: 12,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                isDense: true,
+              ),
             ),
           ),
         ),
@@ -129,61 +213,67 @@ class PantallaDetalleInspeccion extends StatelessWidget {
     );
   }
 
-  Widget _buildSeccionEstado(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Acciones',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: 13,
-            ),
+  Widget _buildCheckItem(
+    String label,
+    bool valor,
+    ValueChanged<bool?> onChanged,
+  ) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: valor,
+            activeColor: AppColors.navy,
+            onChanged: onChanged,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    minimumSize: const Size(0, 42),
-                  ),
-                  icon: const Icon(Icons.check_rounded,
-                      color: Colors.white, size: 16),
-                  label: const Text(
-                    'APROBAR',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.danger,
-                    minimumSize: const Size(0, 42),
-                  ),
-                  icon: const Icon(Icons.close_rounded,
-                      color: Colors.white, size: 16),
-                  label: const Text(
-                    'RECHAZAR',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                ),
-              ),
-            ],
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Área de notas ─────────────────────────────────────────
+  Widget _buildAreaNotas() {
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
+      ),
+      child: TextField(
+        controller: _notasController,
+        maxLines: null,
+        expands: true,
+        style: TextStyle(
+          color: Colors.grey.shade700,
+          fontSize: 13,
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(14),
+          hintText: 'Notas adicionales...',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
