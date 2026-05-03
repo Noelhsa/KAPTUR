@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../config/themes/tema_app.dart';
-import '../pantalla_principal.dart';
+import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/presentacion/screens/pantalla_principal.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,11 +10,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController    = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _passwordVisible = false;
-  bool _termsAccepted   = false;
+  bool _termsAccepted = false;
 
   String? _emailError;
   String? _passwordError;
@@ -28,19 +28,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onContinuar() {
     setState(() {
-      _emailError    = null;
+      _emailError = null;
       _passwordError = null;
     });
 
-    final email    = _emailController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || !email.contains('@')) {
-      setState(() => _emailError = 'Ingresa un correo válido');
+      setState(() => _emailError = 'Usuario no encontrado');
       return;
     }
     if (password.length < 6) {
-      setState(() => _passwordError = 'Mínimo 6 caracteres');
+      setState(() => _passwordError = 'Contraseña incorrecta');
       return;
     }
     if (!_termsAccepted) {
@@ -50,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    // TODO: conectar con backend Node.js
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const PantallaPrincipal()),
@@ -60,72 +61,104 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHero(context),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInput(
-                    controller:   _emailController,
-                    hint:         'Correo electrónico',
-                    icon:         Icons.email_outlined,
-                    errorText:    _emailError,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 14),
-                  _buildInput(
-                    controller: _passwordController,
-                    hint:       'Contraseña',
-                    icon:       Icons.lock_outline,
-                    errorText:  _passwordError,
-                    isPassword: true,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTermsRow(),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _onContinuar,
-                    child: const Text('CONTINUAR'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHero(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 220,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end:   Alignment.bottomCenter,
-          colors: [AppColors.navy, AppColors.background],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      body: Stack(
         children: [
-          const SizedBox(height: 40),
-          Text(
-            'KAPTUR',
-            style: Theme.of(context).textTheme.displayLarge?.copyWith(
-              letterSpacing: 10,
+          // ── Imagen de fondo ───────────────────────────────
+          // TODO: cambia la ruta en la línea de abajo por tu imagen
+          // Ejemplo: 'recursos/imagenes/tu_imagen.jpg'
+          // Línea 73 ↓
+          Positioned.fill(
+            child: Image.asset(
+              'recursos/imagenes/foto_login.jpg', // <-- LÍNEA 75: cambia aquí
+              fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'INICIAR SESIÓN',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              letterSpacing: 4,
+
+          // ── Gradiente oscuro sobre la imagen ─────────────
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xCC000000), // negro 80% arriba
+                    Color(0xE6101622), // background 90% abajo
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Contenido ─────────────────────────────────────
+          SafeArea(
+            child: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 60),
+
+                      // Logo KAPTUR
+                      Text(
+                        'KAPTUR',
+                        style: Theme.of(context)
+                            .textTheme
+                            .displayLarge
+                            ?.copyWith(letterSpacing: 10),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'INICIAR SESIÓN',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(letterSpacing: 4),
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Campo correo
+                      _buildInput(
+                        controller: _emailController,
+                        hint: 'Correo electrónico',
+                        icon: Icons.email_outlined,
+                        errorText: _emailError,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Campo contraseña
+                      _buildInput(
+                        controller: _passwordController,
+                        hint: 'Contraseña',
+                        icon: Icons.lock_outline,
+                        errorText: _passwordError,
+                        isPassword: true,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Checkbox términos
+                      _buildTermsRow(),
+                      const SizedBox(height: 28),
+
+                      // Botón continuar
+                      ElevatedButton(
+                        onPressed: _onContinuar,
+                        child: const Text('CONTINUAR'),
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -142,27 +175,27 @@ class _LoginScreenState extends State<LoginScreen> {
     TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
-      controller:   controller,
-      obscureText:  isPassword && !_passwordVisible,
+      controller: controller,
+      obscureText: isPassword && !_passwordVisible,
       keyboardType: keyboardType,
       style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
       decoration: InputDecoration(
-        hintText:  hint,
+        hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.textHint, size: 18),
         suffixIcon: isPassword
             ? IconButton(
-          icon: Icon(
-            _passwordVisible
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            color: AppColors.textHint,
-            size: 18,
-          ),
-          onPressed: () =>
-              setState(() => _passwordVisible = !_passwordVisible),
-        )
+                icon: Icon(
+                  _passwordVisible
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: AppColors.textHint,
+                  size: 18,
+                ),
+                onPressed: () =>
+                    setState(() => _passwordVisible = !_passwordVisible),
+              )
             : null,
-        errorText:  errorText,
+        errorText: errorText,
         errorStyle: const TextStyle(color: AppColors.danger, fontSize: 10),
       ),
     );
@@ -173,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Checkbox(
-          value:       _termsAccepted,
+          value: _termsAccepted,
           activeColor: AppColors.orange,
           onChanged: (v) => setState(() => _termsAccepted = v ?? false),
         ),

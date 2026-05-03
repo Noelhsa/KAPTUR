@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'config/themes/tema_app.dart';
-import 'presentacion/screens/pantalla_principal.dart';
+import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
 
 void main() {
   runApp(
@@ -20,7 +20,7 @@ class KapturApp extends StatelessWidget {
       title: 'KAPTUR',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const PantallaPrincipal(),
+      home: const LoginScreen(),
     );
   }
 }

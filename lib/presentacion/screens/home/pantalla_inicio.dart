@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 
 class PantallaInicio extends StatelessWidget {
   const PantallaInicio({super.key});
@@ -21,12 +21,16 @@ class PantallaInicio extends StatelessWidget {
     {
       'texto': 'Se capacitan nuevos elementos en el área de 3A',
       'estado': 'Por confirmar',
+      // TODO: cambia la imagen en pantalla_inicio.dart
+      // busca 'recursos/imagenes/aviso_industrial.jpg' y ponla aquí
+      'imagen': 'recursos/imagenes/aviso_industrial.jpg',
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.light,
       body: SafeArea(
         child: Column(
           children: [
@@ -37,7 +41,7 @@ class PantallaInicio extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSeccion('¡Hoy!', _tareasHoy, context),
+                    _buildSeccionHoy(context),
                     const SizedBox(height: 20),
                     _buildSeccionAvisos(context),
                   ],
@@ -50,61 +54,71 @@ class PantallaInicio extends StatelessWidget {
     );
   }
 
+  // ── Header ────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             'INICIO',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              letterSpacing: 4,
-            ),
+                  color: AppColors.navy,
+                  letterSpacing: 4,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           CircleAvatar(
-            radius: 16,
+            radius: 18,
             backgroundColor: AppColors.navy,
-            child: const Icon(Icons.person, color: Colors.white, size: 18),
+            child: const Icon(Icons.person, color: Colors.white, size: 20),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSeccion(
-      String titulo,
-      List<Map<String, String>> tareas,
-      BuildContext context,
-      ) {
+  // ── Sección Hoy ───────────────────────────────────────────
+  Widget _buildSeccionHoy(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          '¡Hoy!',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.navy,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.07)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
-            children: tareas.asMap().entries.map((entry) {
+            children: _tareasHoy.asMap().entries.map((entry) {
               final index = entry.key;
               final tarea = entry.value;
               return Column(
                 children: [
                   _buildTareaItem(tarea, context),
-                  if (index < tareas.length - 1)
+                  if (index < _tareasHoy.length - 1)
                     Divider(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.grey.withOpacity(0.15),
                       height: 1,
+                      indent: 16,
+                      endIndent: 16,
                     ),
                 ],
               );
@@ -117,33 +131,53 @@ class PantallaInicio extends StatelessWidget {
 
   Widget _buildTareaItem(Map<String, String> tarea, BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             tarea['titulo'] ?? '',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: 13,
+            style: const TextStyle(
+              color: AppColors.dark,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             tarea['descripcion'] ?? '',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 6),
-          _buildEstadoPill(tarea['estado'] ?? ''),
+          Text(
+            tarea['estado'] ?? '',
+            style: TextStyle(
+              color: _colorEstado(tarea['estado'] ?? ''),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  // ── Sección Avisos ────────────────────────────────────────
   Widget _buildSeccionAvisos(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Avisos', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          'Avisos',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.navy,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
         const SizedBox(height: 8),
         ..._avisos.map((aviso) => _buildAvisoCard(aviso, context)),
       ],
@@ -154,45 +188,65 @@ class PantallaInicio extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 80,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              gradient: LinearGradient(
-                colors: [AppColors.navy, AppColors.dark],
-              ),
+          // Imagen del aviso
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(12),
             ),
-            child: Center(
-              child: Icon(
-                Icons.precision_manufacturing_outlined,
-                color: Colors.white.withOpacity(0.3),
-                size: 32,
+            child: Image.asset(
+              // TODO: cambia el nombre de la imagen del aviso
+              // Línea de abajo → pon el nombre de tu imagen en recursos/imagenes/
+              aviso['imagen'] ?? 'recursos/imagenes/aviso_industrial.jpg',
+              height: 130,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 130,
+                color: AppColors.navy.withOpacity(0.1),
+                child: Center(
+                  child: Icon(
+                    Icons.precision_manufacturing_outlined,
+                    color: AppColors.navy.withOpacity(0.3),
+                    size: 36,
+                  ),
+                ),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   aviso['texto'] ?? '',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildEstadoPill(aviso['estado'] ?? ''),
+                Text(
+                  aviso['estado'] ?? '',
+                  style: TextStyle(
+                    color: _colorEstado(aviso['estado'] ?? ''),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ),
@@ -201,44 +255,19 @@ class PantallaInicio extends StatelessWidget {
     );
   }
 
-  Widget _buildEstadoPill(String estado) {
-    Color color;
-    Color bg;
+  // ── Color según estado ────────────────────────────────────
+  Color _colorEstado(String estado) {
     switch (estado) {
       case 'Pendiente':
-        color = AppColors.orange;
-        bg    = AppColors.orange.withOpacity(0.12);
-        break;
+        return AppColors.orange;
       case 'Completado':
-        color = AppColors.success;
-        bg    = AppColors.success.withOpacity(0.12);
-        break;
+        return AppColors.success;
       case 'En progreso':
-        color = AppColors.info;
-        bg    = AppColors.info.withOpacity(0.12);
-        break;
+        return AppColors.info;
       case 'Por confirmar':
-        color = AppColors.warning;
-        bg    = AppColors.warning.withOpacity(0.12);
-        break;
+        return AppColors.orange;
       default:
-        color = AppColors.textSecondary;
-        bg    = AppColors.textSecondary.withOpacity(0.12);
+        return Colors.grey;
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        estado,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
   }
 }

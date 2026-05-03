@@ -52,8 +52,8 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
             Text(
               'Crear nuevo',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                letterSpacing: 1,
-              ),
+                    letterSpacing: 1,
+                  ),
             ),
             const SizedBox(height: 16),
             _buildOpcionMenu(
@@ -192,18 +192,15 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   Widget _buildBottomNav() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.07)),
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: const BoxDecoration(
+        color: AppColors.navy,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home_rounded, 'Inicio', 0),
-          _buildNavItem(Icons.checklist_rounded, 'Inspecciones', 1),
+          _buildNavItem(Icons.checklist_rounded, 'Auditoría', 1),
           _buildNavItem(Icons.school_rounded, 'Capacitación', 2),
           _buildNavAdd(),
         ],
@@ -215,27 +212,33 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     final activo = _indiceActivo == indice;
     return GestureDetector(
       onTap: () => setState(() => _indiceActivo = indice),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color:
+                  activo ? Colors.white.withOpacity(0.15) : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
               icon,
-              color: activo ? AppColors.orange : AppColors.textHint,
-              size: 26,
+              color: Colors.white,
+              size: 22,
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: activo ? AppColors.orange : AppColors.textHint,
-                fontSize: 11,
-                fontWeight: activo ? FontWeight.w600 : FontWeight.w400,
-              ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w400,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -243,17 +246,14 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   Widget _buildNavAdd() {
     return GestureDetector(
       onTap: _mostrarMenuNuevo,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.orange,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.add, color: Colors.white, size: 20),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.5)),
         ),
+        child: const Icon(Icons.add, color: Colors.white, size: 22),
       ),
     );
   }
