@@ -34,10 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordError = null;
     });
 
-    final email = _emailController.text.trim();
+    final usuario = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty) {
+    if (usuario.isEmpty) {
       setState(() => _emailError = 'Ingresa tu usuario');
       return;
     }
@@ -58,27 +58,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final api = ApiService();
-      final roles = await api.obtenerRoles();
 
-      print('ROLES DESDE API: $roles');
+      final respuesta = await api.login(
+        usuario: usuario,
+        contrasena: password,
+      );
+
+      print('LOGIN RESPUESTA: $respuesta');
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Conexión correcta: $roles')),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PantallaPrincipal()),
-      );
+      if (respuesta['success'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PantallaPrincipal()),
+        );
+      } else {
+        setState(() {
+          _emailError = 'Usuario o contraseña incorrectos';
+          _passwordError = 'Usuario o contraseña incorrectos';
+        });
+      }
     } catch (e) {
-      print('ERROR API: $e');
-
       if (!mounted) return;
 
+      setState(() {
+        _passwordError = 'Usuario o contraseña incorrectos';
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error conectando con API: $e')),
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
       );
     } finally {
       if (mounted) {

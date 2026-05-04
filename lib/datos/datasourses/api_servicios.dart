@@ -12,23 +12,28 @@ class ApiService {
     ),
   );
 
-  Future<List<dynamic>> obtenerRoles() async {
-    final response = await _dio.get('/roles');
-    return response.data;
-  }
-
   Future<Map<String, dynamic>> login({
     required String usuario,
     required String contrasena,
   }) async {
-    final response = await _dio.post(
-      '/login',
-      data: {
-        'usuario': usuario,
-        'contrasena': contrasena,
-      },
-    );
+    try {
+      final response = await _dio.post(
+        '/login',
+        data: {
+          'usuario': usuario,
+          'contrasena': contrasena,
+        },
+      );
 
-    return response.data;
+      return response.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Usuario o contraseña incorrectos');
+      }
+
+      throw Exception('Error conectando con el servidor');
+    } catch (e) {
+      throw Exception('Error inesperado');
+    }
   }
 }
