@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/datos/datasourses/api_servicios.dart';
 import 'package:proyecto_kaptur/presentacion/screens/pantalla_principal.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _passwordVisible = false;
   bool _termsAccepted = false;
+  bool _isLoading = false;
 
   String? _emailError;
   String? _passwordError;
@@ -26,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _onContinuar() {
+  Future<void> _onContinuar() async {
     setState(() {
       _emailError = null;
       _passwordError = null;
@@ -35,14 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() => _emailError = 'Usuario no encontrado');
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Ingresa tu usuario');
       return;
     }
-    if (password.length < 6) {
-      setState(() => _passwordError = 'Contraseña incorrecta');
+
+    if (password.isEmpty) {
+      setState(() => _passwordError = 'Ingresa tu contraseña');
       return;
     }
+
     if (!_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Debes aceptar los términos')),
@@ -50,11 +54,37 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // TODO: conectar con backend Node.js
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const PantallaPrincipal()),
-    );
+    setState(() => _isLoading = true);
+
+    try {
+      final api = ApiService();
+      final roles = await api.obtenerRoles();
+
+      print('ROLES DESDE API: $roles');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Conexión correcta: $roles')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PantallaPrincipal()),
+      );
+    } catch (e) {
+      print('ERROR API: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error conectando con API: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -63,18 +93,12 @@ class _LoginScreenState extends State<LoginScreen> {
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // ── Imagen de fondo ───────────────────────────────
-          // TODO: cambia la ruta en la línea de abajo por tu imagen
-          // Ejemplo: 'recursos/imagenes/tu_imagen.jpg'
-          // Línea 73 ↓
           Positioned.fill(
             child: Image.asset(
-              'recursos/imagenes/foto_login.jpg', // <-- LÍNEA 75: cambia aquí
+              'recursos/imagenes/foto_login.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
-          // ── Gradiente oscuro sobre la imagen ─────────────
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -82,15 +106,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xCC000000), // negro 80% arriba
-                    Color(0xE6101622), // background 90% abajo
+                    Color(0xCC000000),
+                    Color(0xE6101622),
                   ],
                 ),
               ),
             ),
           ),
-
-          // ── Contenido ─────────────────────────────────────
           SafeArea(
             child: SingleChildScrollView(
               child: ConstrainedBox(
@@ -104,8 +126,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 60),
-
-                      // Logo KAPTUR
                       Text(
                         'KAPTUR',
                         style: Theme.of(context)
@@ -121,20 +141,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             .bodySmall
                             ?.copyWith(letterSpacing: 4),
                       ),
-
                       const SizedBox(height: 48),
-
-                      // Campo correo
                       _buildInput(
                         controller: _emailController,
-                        hint: 'Correo electrónico',
-                        icon: Icons.email_outlined,
+                        hint: 'Usuario',
+                        icon: Icons.person_outline,
                         errorText: _emailError,
-                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 14),
-
-                      // Campo contraseña
                       _buildInput(
                         controller: _passwordController,
                         hint: 'Contraseña',
@@ -143,17 +157,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         isPassword: true,
                       ),
                       const SizedBox(height: 16),
-
-                      // Checkbox términos
                       _buildTermsRow(),
                       const SizedBox(height: 28),
-
-                      // Botón continuar
                       ElevatedButton(
-                        onPressed: _onContinuar,
-                        child: const Text('CONTINUAR'),
+                        onPressed: _isLoading ? null : _onContinuar,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('CONTINUAR'),
                       ),
-
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -191,8 +208,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppColors.textHint,
                   size: 18,
                 ),
-                onPressed: () =>
-                    setState(() => _passwordVisible = !_passwordVisible),
+                onPressed: () {
+                  setState(() => _passwordVisible = !_passwordVisible);
+                },
               )
             : null,
         errorText: errorText,
