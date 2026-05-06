@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 
 class PantallaInicio extends StatelessWidget {
-  const PantallaInicio({super.key});
+  final Map<String, dynamic> usuario;
+  final VoidCallback onUserTap;
+
+  const PantallaInicio({
+    super.key,
+    required this.usuario,
+    required this.onUserTap,
+  });
 
   static const List<Map<String, String>> _tareasHoy = [
     {
@@ -21,8 +28,6 @@ class PantallaInicio extends StatelessWidget {
     {
       'texto': 'Se capacitan nuevos elementos en el área de 3A',
       'estado': 'Por confirmar',
-      // TODO: cambia la imagen en pantalla_inicio.dart
-      // busca 'recursos/imagenes/aviso_industrial.jpg' y ponla aquí
       'imagen': 'recursos/imagenes/aviso_industrial.png',
     },
   ];
@@ -54,7 +59,6 @@ class PantallaInicio extends StatelessWidget {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -70,17 +74,19 @@ class PantallaInicio extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
           ),
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.navy,
-            child: const Icon(Icons.person, color: Colors.white, size: 20),
+          GestureDetector(
+            onTap: onUserTap,
+            child: const CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.navy,
+              child: Icon(Icons.person, color: Colors.white, size: 20),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ── Sección Hoy ───────────────────────────────────────────
   Widget _buildSeccionHoy(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,6 +116,7 @@ class PantallaInicio extends StatelessWidget {
             children: _tareasHoy.asMap().entries.map((entry) {
               final index = entry.key;
               final tarea = entry.value;
+
               return Column(
                 children: [
                   _buildTareaItem(tarea, context),
@@ -165,7 +172,6 @@ class PantallaInicio extends StatelessWidget {
     );
   }
 
-  // ── Sección Avisos ────────────────────────────────────────
   Widget _buildSeccionAvisos(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,14 +207,11 @@ class PantallaInicio extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen del aviso
           ClipRRect(
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(12),
             ),
             child: Image.asset(
-              // TODO: cambia el nombre de la imagen del aviso
-              // Línea de abajo → pon el nombre de tu imagen en recursos/imagenes/
               aviso['imagen'] ?? 'recursos/imagenes/aviso_industrial.png',
               height: 130,
               width: double.infinity,
@@ -255,7 +258,6 @@ class PantallaInicio extends StatelessWidget {
     );
   }
 
-  // ── Color según estado ────────────────────────────────────
   Color _colorEstado(String estado) {
     switch (estado) {
       case 'Pendiente':

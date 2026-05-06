@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
 import 'package:proyecto_kaptur/presentacion/screens/home/pantalla_inicio.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_inspecciones.dart';
 import 'package:proyecto_kaptur/presentacion/screens/capacitacion/pantalla_capacitacion.dart';
@@ -9,7 +10,12 @@ import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_check
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_hallazgos.dart';
 
 class PantallaPrincipal extends StatefulWidget {
-  const PantallaPrincipal({super.key});
+  final Map<String, dynamic> usuario;
+
+  const PantallaPrincipal({
+    super.key,
+    required this.usuario,
+  });
 
   @override
   State<PantallaPrincipal> createState() => _PantallaPrincipalState();
@@ -18,11 +24,140 @@ class PantallaPrincipal extends StatefulWidget {
 class _PantallaPrincipalState extends State<PantallaPrincipal> {
   int _indiceActivo = 0;
 
-  final List<Widget> _pantallas = const [
-    PantallaInicio(),
-    PantallaInspecciones(),
-    PantallaCapacitacion(),
+  late final List<Widget> _pantallas = [
+    PantallaInicio(
+      usuario: widget.usuario,
+      onUserTap: _mostrarMenuUsuario,
+    ),
+    const PantallaInspecciones(),
+    const PantallaCapacitacion(),
   ];
+
+  void _mostrarMenuUsuario() {
+    final nombre = widget.usuario['nombre'] ?? 'Usuario';
+    final apellidos = widget.usuario['apellidos'] ?? '';
+    final rol = widget.usuario['rol'] ?? '';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 45,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.navy,
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$nombre $apellidos',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          rol,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.language, color: AppColors.navy),
+                title: const Text(
+                  'Idioma',
+                  style: TextStyle(color: Colors.black),
+                ),
+                subtitle: const Text(
+                  'Español',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                onTap: () {},
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.dark_mode_outlined, color: AppColors.navy),
+                title: const Text(
+                  'Tema',
+                  style: TextStyle(color: Colors.black),
+                ),
+                subtitle: const Text(
+                  'Claro',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                onTap: () {},
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Cerrar sesión'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _mostrarMenuNuevo() {
     showModalBottomSheet(
@@ -37,7 +172,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Línea indicadora
             Center(
               child: Container(
                 width: 40,
@@ -210,6 +344,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   Widget _buildNavItem(IconData icon, String label, int indice) {
     final activo = _indiceActivo == indice;
+
     return GestureDetector(
       onTap: () => setState(() => _indiceActivo = indice),
       child: Column(

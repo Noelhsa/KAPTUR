@@ -25,7 +25,7 @@ class ApiService {
         },
       );
 
-      return response.data;
+      return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         throw Exception('Usuario o contraseña incorrectos');

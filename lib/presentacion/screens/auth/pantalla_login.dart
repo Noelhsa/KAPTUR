@@ -69,9 +69,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (respuesta['success'] == true) {
+        final usuarioLogueado = Map<String, dynamic>.from(respuesta['usuario']);
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const PantallaPrincipal()),
+          MaterialPageRoute(
+            builder: (_) => PantallaPrincipal(usuario: usuarioLogueado),
+          ),
         );
       } else {
         setState(() {
