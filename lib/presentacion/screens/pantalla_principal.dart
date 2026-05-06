@@ -199,7 +199,9 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const PantallaNuevaInspeccion(),
+                    builder: (_) => PantallaNuevaInspeccion(
+                      usuario: widget.usuario,
+                    ),
                   ),
                 );
               },
