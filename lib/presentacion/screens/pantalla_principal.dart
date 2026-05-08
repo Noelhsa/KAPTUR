@@ -24,14 +24,23 @@ class PantallaPrincipal extends StatefulWidget {
 class _PantallaPrincipalState extends State<PantallaPrincipal> {
   int _indiceActivo = 0;
 
-  late final List<Widget> _pantallas = [
-    PantallaInicio(
-      usuario: widget.usuario,
-      onUserTap: _mostrarMenuUsuario,
-    ),
-    const PantallaInspecciones(),
-    const PantallaCapacitacion(),
-  ];
+  late final List<Widget> _pantallas;
+
+  @override
+  void initState() {
+    super.initState();
+    _pantallas = [
+      PantallaInicio(
+        usuario: widget.usuario,
+        onUserTap: _mostrarMenuUsuario,
+      ),
+      const PantallaInspecciones(),
+    ];
+
+    if (widget.usuario['rol'] == 'Supervisor') {
+      _pantallas.add(const PantallaCapacitacion());
+    }
+  }
 
   void _mostrarMenuUsuario() {
     final nombre = widget.usuario['nombre'] ?? 'Usuario';
@@ -337,8 +346,10 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
         children: [
           _buildNavItem(Icons.home_rounded, 'Inicio', 0),
           _buildNavItem(Icons.checklist_rounded, 'Auditoría', 1),
-          _buildNavItem(Icons.school_rounded, 'Capacitación', 2),
-          _buildNavAdd(),
+          if (widget.usuario['rol'] == 'Supervisor')
+            _buildNavItem(Icons.school_rounded, 'Capacitación', 2),
+          if (widget.usuario['rol'] == 'Supervisor')
+            _buildNavAdd(), // Solo para el Supervisor
         ],
       ),
     );

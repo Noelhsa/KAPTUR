@@ -70,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (respuesta['success'] == true) {
         final usuarioLogueado = Map<String, dynamic>.from(respuesta['usuario']);
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
