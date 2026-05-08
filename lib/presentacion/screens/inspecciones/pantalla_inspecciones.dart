@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
 import 'pantalla_detalle_inspecciones.dart';
 
 class PantallaInspecciones extends StatefulWidget {
@@ -60,14 +60,14 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
 
   List<Map<String, String>> get _inspeccionesFiltradas {
     if (_filtroActivo == 'Todos') return _inspecciones;
-    return _inspecciones
-        .where((i) => i['estado'] == _filtroActivo)
-        .toList();
+    return _inspecciones.where((i) => i['estado'] == _filtroActivo).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          Colors.white, // Asegúrate de que el fondo sea blanco o claro
       body: SafeArea(
         child: Column(
           children: [
@@ -88,30 +88,163 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white, // Fondo blanco o claro para la cabecera
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+          bottom: BorderSide(color: Colors.grey.withOpacity(0.1)),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'INSPECCIONES',
+            'AUDITORÍAS', // Título de auditorías
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              letterSpacing: 4,
-            ),
+                  letterSpacing: 4,
+                  color: Colors
+                      .black, // Título en color negro para contraste en el tema claro
+                ),
           ),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.navy,
-            child: const Icon(Icons.person, color: Colors.white, size: 18),
+          GestureDetector(
+            onTap: _mostrarMenuUsuario, // Acción del icono de usuario
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.blue, // Color del avatar de usuario
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
+            ),
           ),
         ],
       ),
     );
   }
 
+  // Métodos para el menú de usuario, filtros y listas
+  void _mostrarMenuUsuario() {
+    final nombre = "Nombre"; // Obtén el nombre de `widget.usuario`
+    final apellidos = "Apellido"; // Obtén el apellido de `widget.usuario`
+    final rol = "Jefe"; // Obtén el rol de `widget.usuario`
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 45,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.blue,
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$nombre $apellidos',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          rol,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.language, color: Colors.blue),
+                title: const Text(
+                  'Idioma',
+                  style: TextStyle(color: Colors.black),
+                ),
+                subtitle: const Text(
+                  'Español',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                onTap: () {},
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.dark_mode_outlined, color: Colors.blue),
+                title: const Text(
+                  'Tema',
+                  style: TextStyle(color: Colors.black),
+                ),
+                subtitle: const Text(
+                  'Claro',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                onTap: () {},
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Cerrar sesión'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Métodos para filtros y listas
   Widget _buildFiltros() {
     return Container(
       height: 44,
@@ -132,18 +265,17 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
                 vertical: 8,
               ),
               decoration: BoxDecoration(
-                color: activo ? AppColors.orange : AppColors.surface,
+                color: activo ? Colors.orange : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: activo
-                      ? AppColors.orange
-                      : Colors.white.withOpacity(0.07),
+                  color:
+                      activo ? Colors.orange : Colors.white.withOpacity(0.07),
                 ),
               ),
               child: Text(
                 filtro,
                 style: TextStyle(
-                  color: activo ? Colors.white : AppColors.textSecondary,
+                  color: activo ? Colors.white : Colors.black,
                   fontSize: 12,
                   fontWeight: activo ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -170,17 +302,16 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              PantallaDetalleInspeccion(inspeccion: inspeccion),
+          builder: (_) => PantallaDetalleInspeccion(inspeccion: inspeccion),
         ),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Colors.white, // Fondo blanco para las tarjetas
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.07)),
+          border: Border.all(color: Colors.grey.withOpacity(0.07)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +320,7 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.navy,
+                color: Colors.blue,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -206,7 +337,7 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
                   Text(
                     inspeccion['titulo'] ?? '',
                     style: const TextStyle(
-                      color: AppColors.textPrimary,
+                      color: Colors.black, // Título claro
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -216,28 +347,28 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
                     children: [
                       const Icon(
                         Icons.location_on_outlined,
-                        color: AppColors.textHint,
+                        color: Colors.black,
                         size: 12,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         inspeccion['area'] ?? '',
                         style: const TextStyle(
-                          color: AppColors.textHint,
+                          color: Colors.black,
                           fontSize: 11,
                         ),
                       ),
                       const SizedBox(width: 10),
                       const Icon(
                         Icons.calendar_today_outlined,
-                        color: AppColors.textHint,
+                        color: Colors.black,
                         size: 12,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         inspeccion['fecha'] ?? '',
                         style: const TextStyle(
-                          color: AppColors.textHint,
+                          color: Colors.black,
                           fontSize: 11,
                         ),
                       ),
@@ -250,7 +381,7 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
             ),
             const Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.textHint,
+              color: Colors.black,
               size: 20,
             ),
           ],
@@ -266,14 +397,14 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
         children: [
           const Icon(
             Icons.checklist_rounded,
-            color: AppColors.textHint,
+            color: Colors.black,
             size: 48,
           ),
           const SizedBox(height: 12),
           Text(
             'Sin inspecciones $_filtroActivo',
             style: const TextStyle(
-              color: AppColors.textHint,
+              color: Colors.black,
               fontSize: 13,
             ),
           ),
@@ -287,24 +418,24 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
     Color bg;
     switch (estado) {
       case 'Pendiente':
-        color = AppColors.orange;
-        bg    = AppColors.orange.withOpacity(0.12);
+        color = Colors.orange;
+        bg = Colors.orange.withOpacity(0.12);
         break;
       case 'Completado':
-        color = AppColors.success;
-        bg    = AppColors.success.withOpacity(0.12);
+        color = Colors.green;
+        bg = Colors.green.withOpacity(0.12);
         break;
       case 'En progreso':
-        color = AppColors.info;
-        bg    = AppColors.info.withOpacity(0.12);
+        color = Colors.blue;
+        bg = Colors.blue.withOpacity(0.12);
         break;
       case 'Por confirmar':
-        color = AppColors.warning;
-        bg    = AppColors.warning.withOpacity(0.12);
+        color = Colors.yellow;
+        bg = Colors.yellow.withOpacity(0.12);
         break;
       default:
-        color = AppColors.textSecondary;
-        bg    = AppColors.textSecondary.withOpacity(0.12);
+        color = Colors.black;
+        bg = Colors.grey.withOpacity(0.12);
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
