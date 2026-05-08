@@ -3,6 +3,7 @@ import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
 import 'package:proyecto_kaptur/presentacion/screens/home/pantalla_inicio.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_inspecciones.dart';
+import 'package:proyecto_kaptur/presentacion/screens/inspecciones/auditoria_jefe.dart';
 import 'package:proyecto_kaptur/presentacion/screens/capacitacion/pantalla_capacitacion.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_nueva_inspecciones.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_evaluacion.dart';
@@ -29,15 +30,20 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   @override
   void initState() {
     super.initState();
+
+    final rol = widget.usuario['rol'];
+
     _pantallas = [
       PantallaInicio(
         usuario: widget.usuario,
         onUserTap: _mostrarMenuUsuario,
       ),
-      const PantallaInspecciones(),
+      rol == 'Jefe'
+          ? AuditoriaJefe(usuario: widget.usuario)
+          : const PantallaInspecciones(),
     ];
 
-    if (widget.usuario['rol'] == 'Supervisor') {
+    if (rol == 'Supervisor') {
       _pantallas.add(const PantallaCapacitacion());
     }
   }

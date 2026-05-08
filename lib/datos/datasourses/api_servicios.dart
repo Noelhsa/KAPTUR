@@ -36,4 +36,50 @@ class ApiService {
       throw Exception('Error inesperado');
     }
   }
+
+  Future<List<Map<String, dynamic>>> obtenerAuditoriasJefe() async {
+    try {
+      final response = await _dio.get('/auditorias/jefe');
+
+      final data = response.data;
+
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+
+      throw Exception('Respuesta inválida del servidor');
+    } on DioException catch (e) {
+      print('ERROR obtenerAuditoriasJefe: ${e.message}');
+      throw Exception('Error obteniendo auditorías del jefe');
+    } catch (e) {
+      print('ERROR inesperado obtenerAuditoriasJefe: $e');
+      throw Exception('Error inesperado obteniendo auditorías');
+    }
+  }
+
+  Future<Map<String, dynamic>> aprobarAuditoria({
+    required int idAuditoria,
+    required int idJefe,
+    required bool aprobado,
+    String? comentario,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auditorias/$idAuditoria/aprobar',
+        data: {
+          'id_jefe': idJefe,
+          'aprobado': aprobado,
+          'comentario': comentario,
+        },
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      print('ERROR aprobarAuditoria: ${e.message}');
+      throw Exception('Error aprobando auditoría');
+    } catch (e) {
+      print('ERROR inesperado aprobarAuditoria: $e');
+      throw Exception('Error inesperado aprobando auditoría');
+    }
+  }
 }
