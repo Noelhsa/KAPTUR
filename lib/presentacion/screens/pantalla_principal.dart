@@ -177,99 +177,105 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   void _mostrarMenuNuevo() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Crear nuevo',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    letterSpacing: 1,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            _buildOpcionMenu(
-              icon: Icons.verified_user_outlined,
-              titulo: 'Mi verificación',
-              subtitulo: 'Aprobar o rechazar una inspección',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PantallaNuevaInspeccion(
-                      usuario: widget.usuario,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _buildOpcionMenu(
-              icon: Icons.engineering_outlined,
-              titulo: 'Evaluación',
-              subtitulo: 'Evaluar EPP de trabajadores',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PantallaEvaluacion(),
-                  ),
-                );
-              },
-            ),
-            _buildOpcionMenu(
-              icon: Icons.checklist_outlined,
-              titulo: 'Checklist',
-              subtitulo: 'Controles críticos de seguridad',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PantallaChecklist(),
-                  ),
-                );
-              },
-            ),
-            _buildOpcionMenu(
-              icon: Icons.report_problem_outlined,
-              titulo: 'Hallazgos',
-              subtitulo: 'Registrar un hallazgo de seguridad',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PantallaHallazgos(),
-                  ),
-                );
-              },
-            ),
-          ],
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
         ),
       ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Crear nuevo',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _buildOpcionNuevaClaro(
+                icon: Icons.verified_user_outlined,
+                titulo: 'Mi verificación',
+                subtitulo: 'Aprobar o rechazar una inspección',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PantallaNuevaInspeccion(
+                        usuario: widget.usuario,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildOpcionNuevaClaro(
+                icon: Icons.engineering_outlined,
+                titulo: 'Evaluación',
+                subtitulo: 'Evaluar EPP de trabajadores',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PantallaEvaluacion(),
+                    ),
+                  );
+                },
+              ),
+              _buildOpcionNuevaClaro(
+                icon: Icons.checklist_outlined,
+                titulo: 'Checklist',
+                subtitulo: 'Controles críticos de seguridad',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PantallaChecklist(),
+                    ),
+                  );
+                },
+              ),
+              _buildOpcionNuevaClaro(
+                icon: Icons.report_problem_outlined,
+                titulo: 'Hallazgos',
+                subtitulo: 'Registrar un hallazgo de seguridad',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PantallaHallazgos(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildOpcionMenu({
+  Widget _buildOpcionNuevaClaro({
     required IconData icon,
     required String titulo,
     required String subtitulo,
@@ -278,25 +284,38 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.07)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.18),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: AppColors.navy,
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFE8F1FF),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
+              child: Icon(
+                icon,
+                color: AppColors.navy,
+                size: 22,
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,25 +323,25 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                   Text(
                     titulo,
                     style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     subtitulo,
-                    style: const TextStyle(
-                      color: AppColors.textHint,
-                      fontSize: 11,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.textHint,
-              size: 18,
+              color: Colors.grey.shade500,
             ),
           ],
         ),
@@ -354,8 +373,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
           _buildNavItem(Icons.checklist_rounded, 'Auditoría', 1),
           if (widget.usuario['rol'] == 'Supervisor')
             _buildNavItem(Icons.school_rounded, 'Capacitación', 2),
-          if (widget.usuario['rol'] == 'Supervisor')
-            _buildNavAdd(), // Solo para el Supervisor
+          if (widget.usuario['rol'] == 'Supervisor') _buildNavAdd(),
         ],
       ),
     );
