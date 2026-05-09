@@ -90,7 +90,11 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          duration: const Duration(seconds: 8),
+          backgroundColor: AppColors.danger,
+        ),
       );
     } finally {
       if (mounted) {

@@ -19,21 +19,29 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/login',
-        data: {
-          'usuario': usuario,
-          'contrasena': contrasena,
-        },
+        data: {'usuario': usuario, 'contrasena': contrasena},
       );
-
       return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception(
+            'Timeout: el servidor no respondió en 10s (¿IP accesible desde esta red?)');
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        throw Exception(
+            'Sin conexión: no se pudo alcanzar ${_dio.options.baseUrl} — ¿el puerto está abierto?');
+      }
       if (e.response?.statusCode == 401) {
         throw Exception('Usuario o contraseña incorrectos');
       }
-
-      throw Exception('Error conectando con el servidor');
+      if (e.response?.statusCode == 500) {
+        throw Exception(
+            'Error interno del servidor (500): ${e.response?.data}');
+      }
+      throw Exception(
+          'DioError ${e.type.name} — status: ${e.response?.statusCode} — ${e.message}');
     } catch (e) {
-      throw Exception('Error inesperado');
+      throw Exception('Error inesperado: $e');
     }
   }
 
