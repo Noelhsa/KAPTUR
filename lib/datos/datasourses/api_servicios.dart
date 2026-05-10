@@ -4,8 +4,8 @@ class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: 'https://api.kaptur.online/api',
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -23,13 +23,20 @@ class ApiService {
       );
       return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
+      print('>>> DioExceptionType: ${e.type}');
+      print('>>> Message: ${e.message}');
+      print('>>> Status: ${e.response?.statusCode}');
+      print('>>> Error: ${e.error}');
+
       if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception(
-            'Timeout: el servidor no respondió en 10s (¿IP accesible desde esta red?)');
+        throw Exception('Timeout: el servidor no respondió en 30s');
       }
       if (e.type == DioExceptionType.connectionError) {
         throw Exception(
-            'Sin conexión: no se pudo alcanzar ${_dio.options.baseUrl} — ¿el puerto está abierto?');
+            'Sin conexión — tipo: ${e.type.name} — detalle: ${e.error}');
+      }
+      if (e.type == DioExceptionType.badCertificate) {
+        throw Exception('Error de certificado SSL: ${e.message}');
       }
       if (e.response?.statusCode == 401) {
         throw Exception('Usuario o contraseña incorrectos');
@@ -39,7 +46,7 @@ class ApiService {
             'Error interno del servidor (500): ${e.response?.data}');
       }
       throw Exception(
-          'DioError ${e.type.name} — status: ${e.response?.statusCode} — ${e.message}');
+          'DioError: tipo=${e.type.name} status=${e.response?.statusCode} error=${e.error} msg=${e.message}');
     } catch (e) {
       throw Exception('Error inesperado: $e');
     }
