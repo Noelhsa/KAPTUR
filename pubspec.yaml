@@ -35,6 +35,14 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   mockito: ^5.4.4          # para pruebas unitarias
   build_runner: ^2.4.9     # genera código automático
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "recursos/imagenes/isotipo_kaptur.png"
+  adaptive_icon_background: "#101622"
+  adaptive_icon_foreground: "recursos/imagenes/isotipo_kaptur.png"
 
 flutter:
   uses-material-design: true
