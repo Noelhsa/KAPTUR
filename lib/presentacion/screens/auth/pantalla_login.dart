@@ -11,46 +11,39 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _usuarioController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _passwordVisible = false;
-  bool _termsAccepted = false;
+  bool _rememberData = false;
   bool _isLoading = false;
 
-  String? _emailError;
+  String? _usuarioError;
   String? _passwordError;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usuarioController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _onContinuar() async {
+  Future<void> _onIniciarSesion() async {
     setState(() {
-      _emailError = null;
+      _usuarioError = null;
       _passwordError = null;
     });
 
-    final usuario = _emailController.text.trim();
+    final usuario = _usuarioController.text.trim();
     final password = _passwordController.text;
 
     if (usuario.isEmpty) {
-      setState(() => _emailError = 'Ingresa tu usuario');
+      setState(() => _usuarioError = 'Ingresa tu usuario');
       return;
     }
 
     if (password.isEmpty) {
       setState(() => _passwordError = 'Ingresa tu contraseña');
-      return;
-    }
-
-    if (!_termsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes aceptar los términos')),
-      );
       return;
     }
 
@@ -70,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (respuesta['success'] == true) {
         final usuarioLogueado = Map<String, dynamic>.from(respuesta['usuario']);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -78,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         setState(() {
-          _emailError = 'Usuario o contraseña incorrectos';
+          _usuarioError = 'Usuario o contraseña incorrectos';
           _passwordError = 'Usuario o contraseña incorrectos';
         });
       }
@@ -92,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),
-          duration: const Duration(seconds: 8),
+          duration: const Duration(seconds: 5),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -105,6 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final altura = MediaQuery.of(context).size.height;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Stack(
@@ -122,8 +118,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xCC000000),
-                    Color(0xE6101622),
+                    Color(0xCC050A12),
+                    Color(0xEE101622),
+                    Color(0xFA101622),
                   ],
                 ),
               ),
@@ -131,40 +128,45 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top,
+                  minHeight: altura - MediaQuery.of(context).padding.top,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 60),
-                      Text(
-                        'KAPTUR',
-                        style: Theme.of(context)
-                            .textTheme
-                            .displayLarge
-                            ?.copyWith(letterSpacing: 10),
+                      SizedBox(height: altura * 0.045),
+                      Image.asset(
+                        'recursos/imagenes/isotipo_kaptur.png',
+                        height: 110,
+                        fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'INICIAR SESIÓN',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(letterSpacing: 4),
+                      const SizedBox(height: 2),
+                      Image.asset(
+                        'recursos/imagenes/logotipo_kaptur.png',
+                        height: 26,
+                        fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'INICIA SESIÓN',
+                        style: TextStyle(
+                          color: AppColors.textHint,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 4,
+                        ),
+                      ),
+                      SizedBox(height: altura * 0.055),
                       _buildInput(
-                        controller: _emailController,
+                        controller: _usuarioController,
                         hint: 'Usuario',
                         icon: Icons.person_outline,
-                        errorText: _emailError,
+                        errorText: _usuarioError,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       _buildInput(
                         controller: _passwordController,
                         hint: 'Contraseña',
@@ -173,21 +175,154 @@ class _LoginScreenState extends State<LoginScreen> {
                         isPassword: true,
                       ),
                       const SizedBox(height: 16),
-                      _buildTermsRow(),
-                      const SizedBox(height: 28),
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _onContinuar,
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _rememberData,
+                              activeColor: AppColors.orange,
+                              side: BorderSide(
+                                color: Colors.white.withOpacity(0.65),
+                                width: 1.2,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberData = value ?? false;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Recordar mis datos',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Contacta a tu administrador para recuperar el acceso',
+                                  ),
                                 ),
-                              )
-                            : const Text('CONTINUAR'),
+                              );
+                            },
+                            child: const Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: TextStyle(
+                                color: AppColors.orange,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 30),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _onIniciarSesion,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.orange,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor:
+                                AppColors.orange.withOpacity(0.55),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 23,
+                                  height: 23,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.3,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Iniciar sesión',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    SizedBox(width: 14),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 21,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: const TextSpan(
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            height: 1.45,
+                          ),
+                          children: [
+                            TextSpan(text: 'Al iniciar sesión, aceptas los '),
+                            TextSpan(
+                              text: 'Términos y Condiciones',
+                              style: TextStyle(
+                                color: AppColors.orange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextSpan(text: ' y la '),
+                            TextSpan(
+                              text: 'Política de Privacidad',
+                              style: TextStyle(
+                                color: AppColors.orange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextSpan(text: ' de KAPTUR.'),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: altura * 0.16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.verified_user_outlined,
+                            color: AppColors.textSecondary.withOpacity(0.85),
+                            size: 17,
+                          ),
+                          const SizedBox(width: 8),
+                          const Flexible(
+                            child: Text(
+                              'Tus datos están protegidos\ncon encriptación de extremo a extremo.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
                     ],
                   ),
                 ),
@@ -205,72 +340,85 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     String? errorText,
     bool isPassword = false,
-    TextInputType keyboardType = TextInputType.text,
   }) {
+    final bool hasError = errorText != null;
+
     return TextField(
       controller: controller,
       obscureText: isPassword && !_passwordVisible,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 14,
+      ),
+      cursorColor: AppColors.orange,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.textHint, size: 18),
+        hintStyle: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 13,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: hasError ? AppColors.danger : AppColors.textSecondary,
+          size: 19,
+        ),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   _passwordVisible
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: AppColors.textHint,
-                  size: 18,
+                  color: AppColors.textSecondary,
+                  size: 19,
                 ),
                 onPressed: () {
-                  setState(() => _passwordVisible = !_passwordVisible);
+                  setState(() {
+                    _passwordVisible = !_passwordVisible;
+                  });
                 },
               )
             : null,
         errorText: errorText,
-        errorStyle: const TextStyle(color: AppColors.danger, fontSize: 10),
-      ),
-    );
-  }
-
-  Widget _buildTermsRow() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Checkbox(
-          value: _termsAccepted,
-          activeColor: AppColors.orange,
-          onChanged: (v) => setState(() => _termsAccepted = v ?? false),
+        errorStyle: const TextStyle(
+          color: AppColors.danger,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: RichText(
-              text: const TextSpan(
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                ),
-                children: [
-                  TextSpan(text: 'Aceptas las '),
-                  TextSpan(
-                    text: 'condiciones de uso',
-                    style: TextStyle(color: AppColors.orange),
-                  ),
-                  TextSpan(text: ' y el '),
-                  TextSpan(
-                    text: 'aviso de privacidad',
-                    style: TextStyle(color: AppColors.orange),
-                  ),
-                  TextSpan(text: ' de Kaptur.'),
-                ],
-              ),
-            ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 17,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: hasError ? AppColors.danger : Colors.white.withOpacity(0.28),
+            width: 1,
           ),
         ),
-      ],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: hasError ? AppColors.danger : AppColors.orange,
+            width: 1.3,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: AppColors.danger,
+            width: 1.3,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: AppColors.danger,
+            width: 1.3,
+          ),
+        ),
+      ),
     );
   }
 }
