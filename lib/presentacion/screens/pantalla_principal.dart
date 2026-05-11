@@ -218,7 +218,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
               const SizedBox(height: 18),
               _buildOpcionNuevaClaro(
                 icon: Icons.verified_user_outlined,
-                titulo: 'Mi verificación',
+                titulo: 'Nueva auditoría',
                 subtitulo: 'Aprobar o rechazar una inspección',
                 onTap: () {
                   Navigator.pop(context);

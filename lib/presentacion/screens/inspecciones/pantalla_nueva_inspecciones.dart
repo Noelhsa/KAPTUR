@@ -154,7 +154,7 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -177,26 +177,27 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+          bottom: BorderSide(color: Colors.grey.withOpacity(0.12)),
         ),
       ),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textSecondary,
+              color: AppColors.navy,
               size: 18,
             ),
           ),
           const SizedBox(width: 12),
           Text(
-            'MI VERIFICACIÓN',
+            'AUDITORÍA',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   letterSpacing: 3,
+                  color: AppColors.navy,
                 ),
           ),
         ],
@@ -208,9 +209,16 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        border: Border.all(color: Colors.grey.withOpacity(0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +232,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             nombreKey: 'nombre',
             onChanged: (value) async {
               setState(() => _instalacionSeleccionada = value);
-
               if (value != null) {
                 await _cargarPartesInstalacion(value['id_instalacion']);
               }
@@ -271,14 +278,19 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
           TextField(
             controller: _observacionesController,
             maxLines: 4,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: const TextStyle(color: Colors.black87, fontSize: 13),
             decoration: InputDecoration(
-              hintText: 'Escribe observaciones de la verificación',
-              hintStyle: const TextStyle(color: AppColors.textHint),
+              hintText: 'Escribe observaciones de la auditoría',
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.grey.shade50,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
               ),
             ),
           ),
@@ -301,7 +313,7 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text(
-                      'GUARDAR VERIFICACIÓN',
+                      'GUARDAR AUDITORÍA',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -324,18 +336,23 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   }) {
     return DropdownButtonFormField<Map<String, dynamic>>(
       value: value,
-      dropdownColor: AppColors.surface,
+      dropdownColor: Colors.white,
       isExpanded: true,
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.grey.shade50,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
       ),
-      iconEnabledColor: AppColors.textSecondary,
+      iconEnabledColor: AppColors.navy,
       style: const TextStyle(
-        color: AppColors.textPrimary,
+        color: Colors.black87,
         fontSize: 13,
       ),
       items: items.map((item) {
@@ -360,7 +377,7 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
       title: Text(
         titulo,
         style: const TextStyle(
-          color: AppColors.textSecondary,
+          color: Colors.black87,
           fontSize: 13,
         ),
       ),
@@ -370,14 +387,14 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
 
   Widget _buildEtiqueta(
     String texto, {
-    Color color = AppColors.textSecondary,
+    Color color = AppColors.navy,
   }) {
     return Text(
       texto,
       style: TextStyle(
         color: color,
         fontSize: 11,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
