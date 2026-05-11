@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
-import 'package:proyecto_kaptur/datos/datasourses/auditoria_servicio.dart';
-import 'package:proyecto_kaptur/datos/models/auditoria_modelo.dart';
 
 class PantallaNuevaInspeccion extends StatefulWidget {
   final Map<String, dynamic> usuario;
@@ -17,155 +15,40 @@ class PantallaNuevaInspeccion extends StatefulWidget {
 }
 
 class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
-  final AuditoriaServicio _auditoriaServicio = AuditoriaServicio();
-  final TextEditingController _observacionesController =
-      TextEditingController();
+  final _folioController = TextEditingController();
+  final _instalacionController = TextEditingController();
+  final _tipoController = TextEditingController();
+  final _areaController = TextEditingController();
+  final _fechaController = TextEditingController();
+  final _horaController = TextEditingController();
 
-  bool _cargandoCatalogos = true;
-  bool _guardando = false;
-
-  bool _ptObtenido = true;
-  bool _ptVigente = true;
-
-  List<Map<String, dynamic>> _instalaciones = [];
-  List<Map<String, dynamic>> _tiposInstalacion = [];
-  List<Map<String, dynamic>> _partesInstalacion = [];
-
-  Map<String, dynamic>? _instalacionSeleccionada;
-  Map<String, dynamic>? _tipoSeleccionado;
-  Map<String, dynamic>? _parteSeleccionada;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarCatalogos();
-  }
+  bool _ptExiste = false;
+  bool _ptVigente = false;
 
   @override
   void dispose() {
-    _observacionesController.dispose();
+    _folioController.dispose();
+    _instalacionController.dispose();
+    _tipoController.dispose();
+    _areaController.dispose();
+    _fechaController.dispose();
+    _horaController.dispose();
     super.dispose();
-  }
-
-  Future<void> _cargarCatalogos() async {
-    try {
-      final instalaciones = await _auditoriaServicio.obtenerInstalaciones();
-      final tipos = await _auditoriaServicio.obtenerTiposInstalacion();
-
-      setState(() {
-        _instalaciones = instalaciones;
-        _tiposInstalacion = tipos;
-
-        if (_instalaciones.isNotEmpty) {
-          _instalacionSeleccionada = _instalaciones.first;
-        }
-
-        if (_tiposInstalacion.isNotEmpty) {
-          _tipoSeleccionado = _tiposInstalacion.first;
-        }
-      });
-
-      if (_instalacionSeleccionada != null) {
-        await _cargarPartesInstalacion(
-          _instalacionSeleccionada!['id_instalacion'],
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cargando catálogos: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _cargandoCatalogos = false);
-      }
-    }
-  }
-
-  Future<void> _cargarPartesInstalacion(int idInstalacion) async {
-    try {
-      final partes =
-          await _auditoriaServicio.obtenerPartesInstalacion(idInstalacion);
-
-      setState(() {
-        _partesInstalacion = partes;
-        _parteSeleccionada = partes.isNotEmpty ? partes.first : null;
-      });
-    } catch (e) {
-      setState(() {
-        _partesInstalacion = [];
-        _parteSeleccionada = null;
-      });
-    }
-  }
-
-  Future<void> _guardarAuditoria() async {
-    if (_instalacionSeleccionada == null || _tipoSeleccionado == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona instalación y tipo de instalación'),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _guardando = true);
-
-    try {
-      final auditoria = AuditoriaModelo(
-        idInstalacion: _instalacionSeleccionada!['id_instalacion'],
-        idTipoInstalacion: _tipoSeleccionado!['id_tipo_instalacion'],
-        idParteInstalacion: _parteSeleccionada?['id_parte_instalacion'],
-        idSupervisor: widget.usuario['id_usuario'],
-        ptObtenido: _ptObtenido,
-        ptVigente: _ptVigente,
-        observacionesGenerales: _observacionesController.text.trim().isEmpty
-            ? null
-            : _observacionesController.text.trim(),
-      );
-
-      final respuesta = await _auditoriaServicio.crearAuditoria(auditoria);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            respuesta['mensaje'] ?? 'Auditoría creada correctamente',
-          ),
-        ),
-      );
-
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _guardando = false);
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade100,
       body: SafeArea(
         child: Column(
           children: [
             _buildHeader(context),
             Expanded(
-              child: _cargandoCatalogos
-                  ? const Center(child: CircularProgressIndicator())
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildFormulario(context),
-                    ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: _buildFormulario(),
+              ),
             ),
           ],
         ),
@@ -205,17 +88,16 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     );
   }
 
-  Widget _buildFormulario(BuildContext context) {
+  Widget _buildFormulario() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withOpacity(0.12)),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -223,82 +105,86 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildEtiqueta('Instalación'),
-          const SizedBox(height: 6),
-          _buildDropdown(
-            value: _instalacionSeleccionada,
-            items: _instalaciones,
-            idKey: 'id_instalacion',
-            nombreKey: 'nombre',
-            onChanged: (value) async {
-              setState(() => _instalacionSeleccionada = value);
-              if (value != null) {
-                await _cargarPartesInstalacion(value['id_instalacion']);
-              }
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildEtiqueta('Tipo de instalación'),
-          const SizedBox(height: 6),
-          _buildDropdown(
-            value: _tipoSeleccionado,
-            items: _tiposInstalacion,
-            idKey: 'id_tipo_instalacion',
-            nombreKey: 'nombre',
-            onChanged: (value) {
-              setState(() => _tipoSeleccionado = value);
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildEtiqueta('Parte de instalación'),
-          const SizedBox(height: 6),
-          _buildDropdown(
-            value: _parteSeleccionada,
-            items: _partesInstalacion,
-            idKey: 'id_parte_instalacion',
-            nombreKey: 'nombre',
-            onChanged: (value) {
-              setState(() => _parteSeleccionada = value);
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildSwitch(
-            titulo: 'Permiso de trabajo obtenido',
-            valor: _ptObtenido,
-            onChanged: (value) => setState(() => _ptObtenido = value),
-          ),
-          _buildSwitch(
-            titulo: 'Permiso de trabajo vigente',
-            valor: _ptVigente,
-            onChanged: (value) => setState(() => _ptVigente = value),
-          ),
-          const SizedBox(height: 16),
-          _buildEtiqueta('Observaciones generales'),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _observacionesController,
-            maxLines: 4,
-            style: const TextStyle(color: Colors.black87, fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Escribe observaciones de la auditoría',
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
+          // Título sección
+          const Text(
+            'Comenzar auditoría',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 20),
+
+          // Folio
+          _buildCampo(label: 'Folio:', controller: _folioController),
+          const SizedBox(height: 14),
+
+          // Instalación
+          _buildCampo(
+              label: 'Instalación:', controller: _instalacionController),
+          const SizedBox(height: 14),
+
+          // Tipo de Instalación
+          _buildCampo(
+              label: 'Tipo de Instalación:', controller: _tipoController),
+          const SizedBox(height: 14),
+
+          // Área
+          _buildCampo(label: 'Área:', controller: _areaController),
+          const SizedBox(height: 14),
+
+          // Fecha y Hora en la misma fila
+          Row(
+            children: [
+              Expanded(
+                child: _buildCampo(
+                  label: 'Fecha:',
+                  controller: _fechaController,
+                  hint: 'dd/mm/aaaa',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildCampo(
+                  label: 'Hora:',
+                  controller: _horaController,
+                  hint: 'hh:mm',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Permiso de Trabajo
+          const Text(
+            'Permiso de Trabajo (PT):',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildCheckbox(
+            label: 'Existe',
+            valor: _ptExiste,
+            onChanged: (v) => setState(() => _ptExiste = v ?? false),
+          ),
+          const SizedBox(height: 6),
+          _buildCheckbox(
+            label: 'Vigente',
+            valor: _ptVigente,
+            onChanged: (v) => setState(() => _ptVigente = v ?? false),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Botón guardar
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _guardando ? null : _guardarAuditoria,
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 minimumSize: const Size(0, 46),
@@ -306,20 +192,15 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: _guardando
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      'GUARDAR AUDITORÍA',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      ),
-                    ),
+              child: const Text(
+                'GUARDAR AUDITORÍA',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],
@@ -327,75 +208,80 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     );
   }
 
-  Widget _buildDropdown({
-    required Map<String, dynamic>? value,
-    required List<Map<String, dynamic>> items,
-    required String idKey,
-    required String nombreKey,
-    required ValueChanged<Map<String, dynamic>?> onChanged,
+  Widget _buildCampo({
+    required String label,
+    required TextEditingController controller,
+    String? hint,
   }) {
-    return DropdownButtonFormField<Map<String, dynamic>>(
-      value: value,
-      dropdownColor: Colors.white,
-      isExpanded: true,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 130,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+        Expanded(
+          child: Container(
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                isDense: true,
+              ),
+            ),
+          ),
         ),
-      ),
-      iconEnabledColor: AppColors.navy,
-      style: const TextStyle(
-        color: Colors.black87,
-        fontSize: 13,
-      ),
-      items: items.map((item) {
-        return DropdownMenuItem<Map<String, dynamic>>(
-          value: item,
-          child: Text(item[nombreKey].toString()),
-        );
-      }).toList(),
-      onChanged: onChanged,
+      ],
     );
   }
 
-  Widget _buildSwitch({
-    required String titulo,
+  Widget _buildCheckbox({
+    required String label,
     required bool valor,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool?> onChanged,
   }) {
-    return SwitchListTile(
-      value: valor,
-      activeColor: AppColors.success,
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        titulo,
-        style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 13,
+    return Row(
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: valor,
+            onChanged: onChanged,
+            activeColor: AppColors.navy,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            side: BorderSide(color: Colors.grey.shade400, width: 1.5),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
         ),
-      ),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildEtiqueta(
-    String texto, {
-    Color color = AppColors.navy,
-  }) {
-    return Text(
-      texto,
-      style: TextStyle(
-        color: color,
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-      ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 }
