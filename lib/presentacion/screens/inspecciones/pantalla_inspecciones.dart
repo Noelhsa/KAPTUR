@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
+import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'pantalla_detalle_inspecciones.dart';
 
 class PantallaInspecciones extends StatefulWidget {
-  const PantallaInspecciones({super.key});
+  final Map<String, dynamic> usuario;
+  final VoidCallback onUserTap;
+
+  const PantallaInspecciones({
+    super.key,
+    required this.usuario,
+    required this.onUserTap,
+  });
 
   @override
   State<PantallaInspecciones> createState() => _PantallaInspeccionesState();
@@ -105,142 +112,15 @@ class _PantallaInspeccionesState extends State<PantallaInspecciones> {
                 ),
           ),
           GestureDetector(
-            onTap: _mostrarMenuUsuario, // Acción del icono de usuario
-            child: CircleAvatar(
+            onTap: widget.onUserTap,
+            child: const CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.blue, // Color del avatar de usuario
-              child: const Icon(Icons.person, color: Colors.white, size: 18),
+              backgroundColor: AppColors.navy,
+              child: Icon(Icons.person, color: Colors.white, size: 18),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  // Métodos para el menú de usuario, filtros y listas
-  void _mostrarMenuUsuario() {
-    final nombre = "Nombre"; // Obtén el nombre de `widget.usuario`
-    final apellidos = "Apellido"; // Obtén el apellido de `widget.usuario`
-    final rol = "Jefe"; // Obtén el rol de `widget.usuario`
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
-      ),
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 45,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.blue,
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$nombre $apellidos',
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          rol,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.language, color: Colors.blue),
-                title: const Text(
-                  'Idioma',
-                  style: TextStyle(color: Colors.black),
-                ),
-                subtitle: const Text(
-                  'Español',
-                  style: TextStyle(color: Colors.black54),
-                ),
-                onTap: () {},
-              ),
-              ListTile(
-                leading:
-                    const Icon(Icons.dark_mode_outlined, color: Colors.blue),
-                title: const Text(
-                  'Tema',
-                  style: TextStyle(color: Colors.black),
-                ),
-                subtitle: const Text(
-                  'Claro',
-                  style: TextStyle(color: Colors.black54),
-                ),
-                onTap: () {},
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Cerrar sesión'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 

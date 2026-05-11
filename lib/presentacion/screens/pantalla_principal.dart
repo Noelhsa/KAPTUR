@@ -40,11 +40,17 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
       ),
       rol == 'Jefe'
           ? AuditoriaJefe(usuario: widget.usuario)
-          : const PantallaInspecciones(),
+          : PantallaInspecciones(
+              usuario: widget.usuario,
+              onUserTap: _mostrarMenuUsuario,
+            ),
     ];
 
     if (rol == 'Supervisor') {
-      _pantallas.add(const PantallaCapacitacion());
+      _pantallas.add(PantallaCapacitacion(
+        usuario: widget.usuario,
+        onUserTap: _mostrarMenuUsuario,
+      ));
     }
   }
 
