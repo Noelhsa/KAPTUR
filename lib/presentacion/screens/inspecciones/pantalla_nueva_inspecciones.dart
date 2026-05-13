@@ -1,5 +1,9 @@
+// lib/presentacion/screens/inspecciones/pantalla_nueva_inspecciones.dart
+
 import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import '../../../presentacion/widgets/evidencia_item.dart';
+import 'pantalla_reporte_auditoria.dart'; // ← IMPORT AÑADIDO
 
 class PantallaNuevaInspeccion extends StatefulWidget {
   final Map<String, dynamic> usuario;
@@ -44,8 +48,21 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     'Procedimientos': false,
   };
   final _opcionActoController = TextEditingController();
-  String? _severidad; // 'Bajo', 'Medio', 'Alto'
+  String? _severidad;
   final _cantidadPersonasController = TextEditingController();
+  final _causaController = TextEditingController();
+  bool _corregidoEnElMomento = false;
+
+  // Evidencias
+  final List<EvidenciaData> _evidencias = [EvidenciaData()];
+
+  // Resumen
+  final _totalPersonasController = TextEditingController();
+  final _personasSegurasCont = TextEditingController();
+  final _personasInsegurasCont = TextEditingController();
+  final _totalActosController = TextEditingController();
+  final _actosCorregidosController = TextEditingController();
+  final _observacionesResumenController = TextEditingController();
 
   @override
   void dispose() {
@@ -59,7 +76,46 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     _observacionPersonaController.dispose();
     _opcionActoController.dispose();
     _cantidadPersonasController.dispose();
+    _causaController.dispose();
+    _totalPersonasController.dispose();
+    _personasSegurasCont.dispose();
+    _personasInsegurasCont.dispose();
+    _totalActosController.dispose();
+    _actosCorregidosController.dispose();
+    _observacionesResumenController.dispose();
     super.dispose();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  MÉTODO GUARDAR AUDITORÍA ← NUEVO
+  // ══════════════════════════════════════════════════════════
+  void _guardarAuditoria() {
+    final Map<String, dynamic> datosAuditoria = {
+      'folio': _folioController.text.trim(),
+      'instalacion': _instalacionController.text.trim(),
+      'tipo': _tipoController.text.trim(),
+      'area': _areaController.text.trim(),
+      'fecha': _fechaController.text.trim(),
+      'hora': _horaController.text.trim(),
+      'ptExiste': _ptExiste,
+      'ptVigente': _ptVigente,
+      'totalPersonas': _totalPersonasController.text.trim(),
+      'personasSeguras': _personasSegurasCont.text.trim(),
+      'personasInseguras': _personasInsegurasCont.text.trim(),
+      'totalActos': _totalActosController.text.trim(),
+      'actosCorregidos': _actosCorregidosController.text.trim(),
+      'observaciones': _observacionesResumenController.text.trim(),
+      'personasAgregadas': _personasAgregadas,
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PantallaReporteAuditoria(
+          datosAuditoria: datosAuditoria,
+        ),
+      ),
+    );
   }
 
   @override
@@ -81,11 +137,15 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                     _buildSeccionPersonas(),
                     const SizedBox(height: 20),
                     _buildSeccionActosInseguros(),
+                    const SizedBox(height: 20),
+                    _buildSeccionEvidencias(),
+                    const SizedBox(height: 20),
+                    _buildSeccionResumen(),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _guardarAuditoria, // ← CAMBIADO
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
                           minimumSize: const Size(0, 46),
@@ -115,6 +175,164 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  //  SECCIÓN RESUMEN DE LA AUDITORÍA
+  // ══════════════════════════════════════════════════════════
+  Widget _buildSeccionResumen() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Resumen de la auditoría',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildCampo(
+            label: 'Total de personas\nobservadas:',
+            controller: _totalPersonasController,
+          ),
+          const SizedBox(height: 14),
+          _buildCampo(
+            label: 'Personas seguras:',
+            controller: _personasSegurasCont,
+          ),
+          const SizedBox(height: 14),
+          _buildCampo(
+            label: 'Personas inseguras:',
+            controller: _personasInsegurasCont,
+          ),
+          const SizedBox(height: 14),
+          _buildCampo(
+            label: 'Total de actos\ninseguros:',
+            controller: _totalActosController,
+          ),
+          const SizedBox(height: 14),
+          _buildCampo(
+            label: 'Actos corregidos:',
+            controller: _actosCorregidosController,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Observaciones:',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextField(
+              controller: _observacionesResumenController,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(10),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  SECCIÓN EVIDENCIAS
+  // ══════════════════════════════════════════════════════════
+  Widget _buildSeccionEvidencias() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Evidencias',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ...List.generate(_evidencias.length, (index) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (index > 0) const Divider(height: 32),
+                EvidenciaItem(
+                  key: ValueKey(index),
+                  data: _evidencias[index],
+                  onChanged: () => setState(() {}),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 24),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() => _evidencias.add(EvidenciaData()));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B5FA0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Añadir otra evidencia',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  HEADER
+  // ══════════════════════════════════════════════════════════
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -147,6 +365,9 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  //  FORMULARIO GENERAL
+  // ══════════════════════════════════════════════════════════
   Widget _buildFormulario() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -164,7 +385,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título sección
           const Text(
             'Comenzar auditoría',
             style: TextStyle(
@@ -174,26 +394,16 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Folio
           _buildCampo(label: 'Folio:', controller: _folioController),
           const SizedBox(height: 14),
-
-          // Instalación
           _buildCampo(
               label: 'Instalación:', controller: _instalacionController),
           const SizedBox(height: 14),
-
-          // Tipo de Instalación
           _buildCampo(
               label: 'Tipo de Instalación:', controller: _tipoController),
           const SizedBox(height: 14),
-
-          // Área
           _buildCampo(label: 'Área:', controller: _areaController),
           const SizedBox(height: 14),
-
-          // Fecha y Hora en la misma fila
           Row(
             children: [
               Expanded(
@@ -214,8 +424,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Permiso de Trabajo
           const Text(
             'Permiso de Trabajo (PT):',
             style: TextStyle(
@@ -242,8 +450,9 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     );
   }
 
-  // ── Sección Registro de personas observadas ───────────────
-
+  // ══════════════════════════════════════════════════════════
+  //  SECCIÓN PERSONAS
+  // ══════════════════════════════════════════════════════════
   Widget _buildSeccionPersonas() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -261,7 +470,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título dentro de la tarjeta
           const Text(
             'Registro de personas observadas',
             style: TextStyle(
@@ -271,18 +479,14 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ),
           ),
           const SizedBox(height: 20),
-          // Nombre
           _buildCampo(
             label: 'Nombre:',
             controller: _nombrePersonaController,
           ),
           const SizedBox(height: 16),
-
-          // Tipo y Clasificación en dos columnas
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Tipo
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,8 +520,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                   ],
                 ),
               ),
-
-              // Clasificación
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,15 +556,11 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ],
           ),
           const SizedBox(height: 16),
-
-          // Observación
           _buildCampo(
             label: 'Observación:',
             controller: _observacionPersonaController,
           ),
           const SizedBox(height: 20),
-
-          // Botón Agregar persona
           Center(
             child: ElevatedButton(
               onPressed: _agregarPersona,
@@ -384,8 +582,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
               ),
             ),
           ),
-
-          // Lista de personas agregadas
           if (_personasAgregadas.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Divider(),
@@ -450,8 +646,9 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     );
   }
 
-  // ── Sección Registro de actos inseguros ──────────────────
-
+  // ══════════════════════════════════════════════════════════
+  //  SECCIÓN ACTOS INSEGUROS
+  // ══════════════════════════════════════════════════════════
   Widget _buildSeccionActosInseguros() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -469,7 +666,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título
           const Text(
             'Registro de actos inseguros',
             style: TextStyle(
@@ -479,8 +675,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Tipo de acto
           const Text(
             'Tipo de acto:',
             style: TextStyle(
@@ -500,15 +694,32 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                 ),
               )),
           const SizedBox(height: 14),
-
-          // Opción
-          _buildCampo(
-            label: 'Opción:',
-            controller: _opcionActoController,
+          const Text(
+            'Opción:',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextField(
+              controller: _opcionActoController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(10),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+              ),
+            ),
           ),
           const SizedBox(height: 14),
-
-          // Severidad
           const Text(
             'Severidad:',
             style: TextStyle(
@@ -518,53 +729,84 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ),
           ),
           const SizedBox(height: 8),
-          _buildRadioSeveridad(
-            prefijo: '⅓',
-            label: 'Bajo',
-            color: Colors.black87,
-          ),
+          _buildCheckboxExclusivo(
+              prefijo: '⅓', label: 'Bajo', color: Colors.black87),
           const SizedBox(height: 4),
-          _buildRadioSeveridad(
-            prefijo: '1',
-            label: 'Medio',
-            color: Colors.black87,
-          ),
+          _buildCheckboxExclusivo(
+              prefijo: '1', label: 'Medio', color: Colors.black87),
           const SizedBox(height: 4),
-          _buildRadioSeveridad(
-            prefijo: '3',
-            label: 'Alto',
-            color: Colors.red,
-          ),
+          _buildCheckboxExclusivo(
+              prefijo: '3', label: 'Alto', color: Colors.red),
           const SizedBox(height: 14),
-
-          // Cantidad de personas
           _buildCampo(
             label: 'Cantidad de personas:',
             controller: _cantidadPersonasController,
             hint: '0',
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Causa:',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextField(
+              controller: _causaController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(10),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildCheckbox(
+            label: 'Corregido en el momento',
+            valor: _corregidoEnElMomento,
+            onChanged: (v) =>
+                setState(() => _corregidoEnElMomento = v ?? false),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRadioSeveridad({
+  // ══════════════════════════════════════════════════════════
+  //  WIDGETS AUXILIARES
+  // ══════════════════════════════════════════════════════════
+
+  Widget _buildCheckboxExclusivo({
     required String prefijo,
     required String label,
     required Color color,
   }) {
+    final seleccionado = _severidad == label;
     return GestureDetector(
-      onTap: () => setState(() => _severidad = label),
+      onTap: () => setState(() => _severidad = seleccionado ? null : label),
       child: Row(
         children: [
           SizedBox(
             width: 24,
             height: 24,
-            child: Radio<String>(
-              value: label,
-              groupValue: _severidad,
-              onChanged: (v) => setState(() => _severidad = v),
+            child: Checkbox(
+              value: seleccionado,
+              onChanged: (_) =>
+                  setState(() => _severidad = seleccionado ? null : label),
               activeColor: AppColors.navy,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+              side: BorderSide(color: Colors.grey.shade400, width: 1.5),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
@@ -580,10 +822,7 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.black87, fontSize: 13),
           ),
         ],
       ),
@@ -613,7 +852,6 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                 : 'Sin clasificación',
         'observacion': _observacionPersonaController.text.trim(),
       });
-      // Limpiar campos
       _nombrePersonaController.clear();
       _observacionPersonaController.clear();
       _tipoInterna = false;
