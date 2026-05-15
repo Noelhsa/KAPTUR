@@ -4,13 +4,44 @@ class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: 'https://api.kaptur.online/api',
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
     ),
   );
+
+  String _mensajeError(DioException e, String mensajeDefault) {
+    final data = e.response?.data;
+
+    if (data is Map && data['detail'] != null) {
+      return data['detail'].toString();
+    }
+
+    if (data is Map && data['mensaje'] != null) {
+      return data['mensaje'].toString();
+    }
+
+    if (data is String && data.trim().isNotEmpty) {
+      return data;
+    }
+
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return 'Tiempo de espera agotado. Revisa tu conexión.';
+    }
+
+    if (e.type == DioExceptionType.connectionError) {
+      return 'Error de conexión con el servidor.';
+    }
+
+    return mensajeDefault;
+  }
+
+  // ── Login ────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> login({
     required String usuario,
@@ -19,56 +50,157 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/login',
-        data: {'usuario': usuario, 'contrasena': contrasena},
+        data: {
+          'usuario': usuario,
+          'contrasena': contrasena,
+        },
       );
+
       return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
-      print('>>> DioExceptionType: ${e.type}');
-      print('>>> Message: ${e.message}');
-      print('>>> Status: ${e.response?.statusCode}');
-      print('>>> Error: ${e.error}');
-
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception('Timeout: el servidor no respondió en 30s');
-      }
-      if (e.type == DioExceptionType.connectionError) {
-        throw Exception(
-            'Sin conexión — tipo: ${e.type.name} — detalle: ${e.error}');
-      }
-      if (e.type == DioExceptionType.badCertificate) {
-        throw Exception('Error de certificado SSL: ${e.message}');
-      }
       if (e.response?.statusCode == 401) {
         throw Exception('Usuario o contraseña incorrectos');
       }
-      if (e.response?.statusCode == 500) {
-        throw Exception(
-            'Error interno del servidor (500): ${e.response?.data}');
-      }
+
       throw Exception(
-          'DioError: tipo=${e.type.name} status=${e.response?.statusCode} error=${e.error} msg=${e.message}');
-    } catch (e) {
-      throw Exception('Error inesperado: $e');
+        _mensajeError(e, 'Error conectando con el servidor'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al iniciar sesión');
+    }
+  }
+
+  // ── Roles ────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> obtenerRoles() async {
+    try {
+      final response = await _dio.get('/roles');
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener roles'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener roles');
+    }
+  }
+
+  // ── Catálogos básicos ────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> obtenerInstalaciones() async {
+    try {
+      final response = await _dio.get('/instalaciones');
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener instalaciones'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener instalaciones');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerTiposInstalacion() async {
+    try {
+      final response = await _dio.get('/tipos-instalacion');
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener tipos de instalación'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener tipos de instalación');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerPartesInstalacion(
+    int idInstalacion,
+  ) async {
+    try {
+      final response = await _dio.get('/partes-instalacion/$idInstalacion');
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener partes de instalación'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener partes de instalación');
+    }
+  }
+
+  // ── Auditorías ───────────────────────────────────────────
+
+  Future<Map<String, dynamic>> crearAuditoria({
+    required int idInstalacion,
+    required int idTipoInstalacion,
+    int? idParteInstalacion,
+    required int idSupervisor,
+    required bool ptObtenido,
+    required bool ptVigente,
+    String? observacionesGenerales,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auditorias',
+        data: {
+          'id_instalacion': idInstalacion,
+          'id_tipo_instalacion': idTipoInstalacion,
+          'id_parte_instalacion': idParteInstalacion,
+          'id_supervisor': idSupervisor,
+          'pt_obtenido': ptObtenido,
+          'pt_vigente': ptVigente,
+          'observaciones_generales': observacionesGenerales,
+        },
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al crear auditoría'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al crear auditoría');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerAuditorias() async {
+    try {
+      final response = await _dio.get('/auditorias');
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener auditorías'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener auditorías');
     }
   }
 
   Future<List<Map<String, dynamic>>> obtenerAuditoriasJefe() async {
     try {
       final response = await _dio.get('/auditorias/jefe');
-
-      final data = response.data;
-
-      if (data is List) {
-        return data.map((item) => Map<String, dynamic>.from(item)).toList();
-      }
-
-      throw Exception('Respuesta inválida del servidor');
+      return List<Map<String, dynamic>>.from(response.data);
     } on DioException catch (e) {
-      print('ERROR obtenerAuditoriasJefe: ${e.message}');
-      throw Exception('Error obteniendo auditorías del jefe');
-    } catch (e) {
-      print('ERROR inesperado obtenerAuditoriasJefe: $e');
-      throw Exception('Error inesperado obteniendo auditorías');
+      throw Exception(
+        _mensajeError(e, 'Error al obtener auditorías del jefe'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener auditorías del jefe');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerHistorialAuditoriasJefe(
+    int idJefe,
+  ) async {
+    try {
+      final response = await _dio.get('/auditorias/historial-jefe/$idJefe');
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener el historial de auditorías'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener el historial de auditorías');
     }
   }
 
@@ -90,11 +222,11 @@ class ApiService {
 
       return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
-      print('ERROR aprobarAuditoria: ${e.message}');
-      throw Exception('Error aprobando auditoría');
-    } catch (e) {
-      print('ERROR inesperado aprobarAuditoria: $e');
-      throw Exception('Error inesperado aprobando auditoría');
+      throw Exception(
+        _mensajeError(e, 'Error al aprobar o rechazar auditoría'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al aprobar o rechazar auditoría');
     }
   }
 }

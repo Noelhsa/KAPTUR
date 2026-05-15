@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
 import 'package:proyecto_kaptur/presentacion/screens/home/pantalla_inicio.dart';
+import 'package:proyecto_kaptur/presentacion/screens/home/inicio_jefe.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_inspecciones.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/auditoria_jefe.dart';
 import 'package:proyecto_kaptur/presentacion/screens/capacitacion/pantalla_capacitacion.dart';
@@ -33,24 +34,37 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
     final rol = widget.usuario['rol'];
 
-    _pantallas = [
-      PantallaInicio(
-        usuario: widget.usuario,
-        onUserTap: _mostrarMenuUsuario,
-      ),
-      rol == 'Jefe'
-          ? AuditoriaJefe(usuario: widget.usuario)
-          : PantallaInspecciones(
-              usuario: widget.usuario,
-              onUserTap: _mostrarMenuUsuario,
-            ),
-    ];
+    if (rol == 'Jefe') {
+      _pantallas = [
+        InicioJefe(
+          usuario: widget.usuario,
+          onUserTap: _mostrarMenuUsuario,
+        ),
+        AuditoriaJefe(
+          usuario: widget.usuario,
+          onUserTap: _mostrarMenuUsuario,
+        ),
+      ];
+    } else {
+      _pantallas = [
+        PantallaInicio(
+          usuario: widget.usuario,
+          onUserTap: _mostrarMenuUsuario,
+        ),
+        PantallaInspecciones(
+          usuario: widget.usuario,
+          onUserTap: _mostrarMenuUsuario,
+        ),
+      ];
 
-    if (rol == 'Supervisor') {
-      _pantallas.add(PantallaCapacitacion(
-        usuario: widget.usuario,
-        onUserTap: _mostrarMenuUsuario,
-      ));
+      if (rol == 'Supervisor') {
+        _pantallas.add(
+          PantallaCapacitacion(
+            usuario: widget.usuario,
+            onUserTap: _mostrarMenuUsuario,
+          ),
+        );
+      }
     }
   }
 
@@ -367,6 +381,9 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   }
 
   Widget _buildBottomNav() {
+    final rol = widget.usuario['rol'];
+    final esJefe = rol == 'Jefe';
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: const BoxDecoration(
@@ -376,10 +393,14 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home_rounded, 'Inicio', 0),
-          _buildNavItem(Icons.checklist_rounded, 'Auditoría', 1),
-          if (widget.usuario['rol'] == 'Supervisor')
+          _buildNavItem(
+            esJefe ? Icons.history_rounded : Icons.checklist_rounded,
+            esJefe ? 'Historial' : 'Auditoría',
+            1,
+          ),
+          if (rol == 'Supervisor')
             _buildNavItem(Icons.school_rounded, 'Capacitación', 2),
-          if (widget.usuario['rol'] == 'Supervisor') _buildNavAdd(),
+          if (rol == 'Supervisor') _buildNavAdd(),
         ],
       ),
     );

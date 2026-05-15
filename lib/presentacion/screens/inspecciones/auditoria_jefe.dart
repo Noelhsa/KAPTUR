@@ -4,10 +4,12 @@ import 'package:proyecto_kaptur/datos/datasourses/api_servicios.dart';
 
 class AuditoriaJefe extends StatefulWidget {
   final Map<String, dynamic> usuario;
+  final VoidCallback? onUserTap;
 
   const AuditoriaJefe({
     super.key,
     required this.usuario,
+    this.onUserTap,
   });
 
   @override
@@ -24,17 +26,25 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
   @override
   void initState() {
     super.initState();
-    _cargarAuditorias();
+    _cargarHistorial();
   }
 
-  Future<void> _cargarAuditorias() async {
+  Future<void> _cargarHistorial() async {
     setState(() {
       _cargando = true;
       _error = null;
     });
 
     try {
-      final auditorias = await _api.obtenerAuditoriasJefe();
+      final idJefeRaw = widget.usuario['id_usuario'];
+
+      if (idJefeRaw == null) {
+        throw Exception('No se encontró el ID del jefe');
+      }
+
+      final idJefe = int.parse(idJefeRaw.toString());
+
+      final auditorias = await _api.obtenerHistorialAuditoriasJefe(idJefe);
 
       if (!mounted) return;
 
@@ -52,119 +62,14 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
     }
   }
 
-  Future<void> _confirmarDecision({
-    required Map<String, dynamic> auditoria,
-    required bool aprobado,
-  }) async {
-    final comentarioController = TextEditingController();
-
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: Text(
-            aprobado ? 'Aprobar auditoría' : 'Rechazar auditoría',
-            style: const TextStyle(color: AppColors.textPrimary),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                aprobado
-                    ? '¿Seguro que deseas aprobar esta auditoría?'
-                    : '¿Seguro que deseas rechazar esta auditoría?',
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: comentarioController,
-                maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
-                  hintText: 'Comentario opcional',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(aprobado ? 'Aprobar' : 'Rechazar'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmar != true) return;
-
-    await _enviarDecision(
-      auditoria: auditoria,
-      aprobado: aprobado,
-      comentario: comentarioController.text.trim().isEmpty
-          ? null
-          : comentarioController.text.trim(),
-    );
-  }
-
-  Future<void> _enviarDecision({
-    required Map<String, dynamic> auditoria,
-    required bool aprobado,
-    String? comentario,
-  }) async {
-    final idAuditoria = auditoria['id_auditoria'];
-    final idJefe = widget.usuario['id_usuario'];
-
-    if (idAuditoria == null || idJefe == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se encontró el ID de auditoría o del jefe'),
-        ),
-      );
-      return;
-    }
-
-    try {
-      await _api.aprobarAuditoria(
-        idAuditoria: int.parse(idAuditoria.toString()),
-        idJefe: int.parse(idJefe.toString()),
-        aprobado: aprobado,
-        comentario: comentario,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            aprobado
-                ? 'Auditoría aprobada correctamente'
-                : 'Auditoría rechazada correctamente',
-          ),
-        ),
-      );
-
-      await _cargarAuditorias();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-        ),
-      );
-    }
-  }
-
   String _formatearFecha(dynamic fecha) {
     if (fecha == null) return 'Sin fecha';
 
     final texto = fecha.toString();
+
+    if (texto.length >= 16) {
+      return texto.substring(0, 16).replaceAll('T', ' ');
+    }
 
     if (texto.length >= 10) {
       return texto.substring(0, 10);
@@ -190,10 +95,14 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
     }
   }
 
+  bool _esSi(dynamic valor) {
+    return valor == true || valor == 1 || valor.toString() == '1';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.grey.shade100,
       body: SafeArea(
         child: Column(
           children: [
@@ -211,24 +120,37 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+          bottom: BorderSide(color: Colors.grey.withOpacity(0.12)),
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'AUDITORÍAS',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  letterSpacing: 4,
-                ),
+          Expanded(
+            child: Text(
+              'HISTORIAL DE AUDITORÍAS',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    letterSpacing: 1.8,
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
           ),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.navy,
-            child: const Icon(Icons.person, color: Colors.white, size: 18),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: widget.onUserTap,
+            child: const CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.navy,
+              child: Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
           ),
         ],
       ),
@@ -258,14 +180,18 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
                   fontSize: 13,
                 ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _cargarAuditorias,
+                onPressed: _cargarHistorial,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('Reintentar'),
               ),
             ],
@@ -276,21 +202,21 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
 
     if (_auditorias.isEmpty) {
       return RefreshIndicator(
-        onRefresh: _cargarAuditorias,
+        onRefresh: _cargarHistorial,
         child: ListView(
-          children: const [
-            SizedBox(height: 180),
+          children: [
+            const SizedBox(height: 180),
             Icon(
-              Icons.checklist_rounded,
-              color: AppColors.textHint,
+              Icons.history_rounded,
+              color: Colors.grey.shade400,
               size: 48,
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Center(
               child: Text(
-                'No hay auditorías disponibles',
+                'No hay auditorías aprobadas en el historial',
                 style: TextStyle(
-                  color: AppColors.textHint,
+                  color: Colors.grey.shade500,
                   fontSize: 13,
                 ),
               ),
@@ -301,18 +227,18 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
     }
 
     return RefreshIndicator(
-      onRefresh: _cargarAuditorias,
+      onRefresh: _cargarHistorial,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _auditorias.length,
         itemBuilder: (context, index) {
-          return _buildTarjetaAuditoria(_auditorias[index]);
+          return _buildTarjetaHistorial(_auditorias[index]);
         },
       ),
     );
   }
 
-  Widget _buildTarjetaAuditoria(Map<String, dynamic> auditoria) {
+  Widget _buildTarjetaHistorial(Map<String, dynamic> auditoria) {
     final id = auditoria['id_auditoria']?.toString() ?? '';
     final instalacion =
         auditoria['instalacion']?.toString() ?? 'Sin instalación';
@@ -321,20 +247,33 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
     final parteInstalacion =
         auditoria['parte_instalacion']?.toString() ?? 'Sin parte';
     final supervisor = auditoria['supervisor']?.toString() ?? 'Sin supervisor';
+    final jefe = auditoria['jefe']?.toString() ?? 'Sin jefe';
     final estado = auditoria['estado']?.toString() ?? '';
-    final fecha = _formatearFecha(auditoria['fecha_hora_inicio']);
+    final fechaInicio = _formatearFecha(auditoria['fecha_hora_inicio']);
+    final fechaFin = _formatearFecha(auditoria['fecha_hora_fin']);
+    final fechaAprobacion = _formatearFecha(auditoria['fecha_hora_aprobacion']);
     final observaciones =
         auditoria['observaciones_generales']?.toString() ?? 'Sin observaciones';
+    final comentario =
+        auditoria['comentario']?.toString() ?? 'Sin comentario del jefe';
 
-    final puedeDecidir = estado != 'APROBADA' && estado != 'RECHAZADA';
+    final ptObtenido = _esSi(auditoria['pt_obtenido']) ? 'Sí' : 'No';
+    final ptVigente = _esSi(auditoria['pt_vigente']) ? 'Sí' : 'No';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.withOpacity(0.14)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,7 +288,7 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.fact_check_outlined,
+                  Icons.history_rounded,
                   color: Colors.white,
                   size: 22,
                 ),
@@ -359,7 +298,7 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
                 child: Text(
                   'Auditoría #$id',
                   style: const TextStyle(
-                    color: AppColors.textPrimary,
+                    color: Colors.black87,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -372,44 +311,52 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
           _buildInfo(Icons.business_outlined, instalacion),
           _buildInfo(Icons.category_outlined, tipoInstalacion),
           _buildInfo(Icons.location_on_outlined, parteInstalacion),
-          _buildInfo(Icons.person_outline, supervisor),
-          _buildInfo(Icons.calendar_today_outlined, fecha),
-          const SizedBox(height: 8),
+          _buildInfo(Icons.person_outline, 'Supervisor: $supervisor'),
+          _buildInfo(Icons.verified_user_outlined, 'Aprobó: $jefe'),
+          _buildInfo(Icons.calendar_today_outlined, 'Inicio: $fechaInicio'),
+          _buildInfo(Icons.event_available_outlined, 'Fin: $fechaFin'),
+          _buildInfo(
+            Icons.check_circle_outline,
+            'Aprobación: $fechaAprobacion',
+          ),
+          _buildInfo(
+            Icons.assignment_turned_in_outlined,
+            'PT obtenido: $ptObtenido · PT vigente: $ptVigente',
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Observaciones generales:',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(
             observaciones,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: Colors.grey.shade700,
               fontSize: 12,
             ),
           ),
-          if (puedeDecidir) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmarDecision(
-                      auditoria: auditoria,
-                      aprobado: false,
-                    ),
-                    icon: const Icon(Icons.close),
-                    label: const Text('Rechazar'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _confirmarDecision(
-                      auditoria: auditoria,
-                      aprobado: true,
-                    ),
-                    icon: const Icon(Icons.check),
-                    label: const Text('Aprobar'),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 10),
+          const Text(
+            'Comentario del jefe:',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
-          ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            comentario,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -422,15 +369,15 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
         children: [
           Icon(
             icon,
-            color: AppColors.textHint,
+            color: Colors.grey.shade500,
             size: 14,
           ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               texto,
-              style: const TextStyle(
-                color: AppColors.textHint,
+              style: TextStyle(
+                color: Colors.grey.shade600,
                 fontSize: 11,
               ),
             ),
@@ -466,8 +413,8 @@ class _AuditoriaJefeState extends State<AuditoriaJefe> {
         bg = AppColors.orange.withOpacity(0.12);
         break;
       default:
-        color = AppColors.textSecondary;
-        bg = AppColors.textSecondary.withOpacity(0.12);
+        color = Colors.grey.shade700;
+        bg = Colors.grey.withOpacity(0.12);
     }
 
     return Container(
