@@ -41,6 +41,20 @@ class ApiService {
     return mensajeDefault;
   }
 
+  Future<Map<String, dynamic>> obtenerInicioSupervisor(int idSupervisor) async {
+    try {
+      final response = await _dio.get('/supervisor/inicio/$idSupervisor');
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener el resumen del supervisor'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener el resumen del supervisor');
+    }
+  }
+
   // ── Login ────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> login({

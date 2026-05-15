@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
+import 'package:proyecto_kaptur/datos/datasourses/api_servicios.dart';
 
-class PantallaInicio extends StatelessWidget {
+class PantallaInicio extends StatefulWidget {
   final Map<String, dynamic> usuario;
   final VoidCallback onUserTap;
 
@@ -11,10 +12,74 @@ class PantallaInicio extends StatelessWidget {
     required this.onUserTap,
   });
 
+  @override
+  State<PantallaInicio> createState() => _PantallaInicioState();
+}
+
+class _PantallaInicioState extends State<PantallaInicio> {
+  final ApiService _api = ApiService();
+
+  bool _cargando = true;
+  String? _error;
+
+  int _totalAuditorias = 0;
+  int _esteMes = 0;
+  int _pendientes = 0;
+  int _enRevision = 0;
+  int _aprobadas = 0;
+  int _rechazadas = 0;
+
   String get _nombreUsuario {
-    final nombre = usuario['nombre']?.toString().trim() ?? '';
+    final nombre = widget.usuario['nombre']?.toString().trim() ?? '';
     if (nombre.isEmpty) return 'Supervisor';
     return nombre;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarResumen();
+  }
+
+  Future<void> _cargarResumen() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+
+    try {
+      final idSupervisorRaw =
+          widget.usuario['id_usuario'] ?? widget.usuario['id'];
+
+      if (idSupervisorRaw == null) {
+        throw Exception('No se encontró el ID del supervisor');
+      }
+
+      final idSupervisor = int.parse(idSupervisorRaw.toString());
+
+      final respuesta = await _api.obtenerInicioSupervisor(idSupervisor);
+      final resumen = Map<String, dynamic>.from(respuesta['resumen'] ?? {});
+
+      if (!mounted) return;
+
+      setState(() {
+        _totalAuditorias =
+            int.tryParse(resumen['total_auditorias'].toString()) ?? 0;
+        _esteMes = int.tryParse(resumen['este_mes'].toString()) ?? 0;
+        _pendientes = int.tryParse(resumen['pendientes'].toString()) ?? 0;
+        _enRevision = int.tryParse(resumen['en_revision'].toString()) ?? 0;
+        _aprobadas = int.tryParse(resumen['aprobadas'].toString()) ?? 0;
+        _rechazadas = int.tryParse(resumen['rechazadas'].toString()) ?? 0;
+        _cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString().replaceAll('Exception: ', '');
+        _cargando = false;
+      });
+    }
   }
 
   @override
@@ -26,19 +91,27 @@ class PantallaInicio extends StatelessWidget {
           children: [
             _buildHeader(context),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildBienvenida(context),
-                    const SizedBox(height: 18),
-                    _buildResumenRapido(context),
-                    const SizedBox(height: 22),
-                    _buildEstadoAuditorias(context),
-                    const SizedBox(height: 22),
-                    _buildAccesoRapido(context),
-                  ],
+              child: RefreshIndicator(
+                onRefresh: _cargarResumen,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBienvenida(context),
+                      const SizedBox(height: 18),
+                      if (_cargando) _buildCargando(),
+                      if (!_cargando && _error != null) _buildError(),
+                      if (!_cargando && _error == null) ...[
+                        _buildResumenRapido(context),
+                        const SizedBox(height: 22),
+                        _buildEstadoAuditorias(context),
+                        const SizedBox(height: 22),
+                        _buildAccesoRapido(context),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -71,7 +144,7 @@ class PantallaInicio extends StatelessWidget {
                 ),
           ),
           GestureDetector(
-            onTap: onUserTap,
+            onTap: widget.onUserTap,
             child: const CircleAvatar(
               radius: 18,
               backgroundColor: AppColors.navy,
@@ -154,6 +227,61 @@ class PantallaInicio extends StatelessWidget {
     );
   }
 
+  Widget _buildCargando() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 50),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.danger.withOpacity(0.18),
+        ),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: AppColors.danger,
+            size: 38,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _error ?? 'Error al cargar información',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: _cargarResumen,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.navy,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResumenRapido(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,28 +301,28 @@ class PantallaInicio extends StatelessWidget {
           children: [
             _buildResumenCard(
               titulo: 'Este mes',
-              valor: '12',
+              valor: _esteMes.toString(),
               descripcion: 'Auditorías registradas',
               icono: Icons.calendar_month_outlined,
               color: AppColors.navy,
             ),
             _buildResumenCard(
               titulo: 'Pendientes',
-              valor: '3',
+              valor: _pendientes.toString(),
               descripcion: 'Sin enviar o en borrador',
               icono: Icons.pending_actions_outlined,
               color: AppColors.orange,
             ),
             _buildResumenCard(
               titulo: 'En revisión',
-              valor: '2',
+              valor: _enRevision.toString(),
               descripcion: 'Esperando al jefe',
               icono: Icons.rate_review_outlined,
               color: AppColors.info,
             ),
             _buildResumenCard(
               titulo: 'Aprobadas',
-              valor: '6',
+              valor: _aprobadas.toString(),
               descripcion: 'Aceptadas por el jefe',
               icono: Icons.check_circle_outline,
               color: AppColors.success,
@@ -204,9 +332,9 @@ class PantallaInicio extends StatelessWidget {
         const SizedBox(height: 12),
         _buildResumenHorizontal(
           titulo: 'Rechazadas',
-          valor: '1',
+          valor: _rechazadas.toString(),
           descripcion:
-              'Auditoría devuelta con observaciones para revisión del supervisor.',
+              'Auditorías devueltas con observaciones para revisión del supervisor.',
           icono: Icons.cancel_outlined,
           color: AppColors.danger,
         ),
@@ -367,6 +495,10 @@ class PantallaInicio extends StatelessWidget {
   }
 
   Widget _buildEstadoAuditorias(BuildContext context) {
+    final total = _totalAuditorias == 0
+        ? (_pendientes + _enRevision + _aprobadas + _rechazadas)
+        : _totalAuditorias;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -396,29 +528,29 @@ class PantallaInicio extends StatelessWidget {
             children: [
               _buildBarraEstado(
                 titulo: 'Aprobadas',
-                valor: 6,
-                total: 12,
+                valor: _aprobadas,
+                total: total,
                 color: AppColors.success,
               ),
               const SizedBox(height: 14),
               _buildBarraEstado(
                 titulo: 'En revisión',
-                valor: 2,
-                total: 12,
+                valor: _enRevision,
+                total: total,
                 color: AppColors.info,
               ),
               const SizedBox(height: 14),
               _buildBarraEstado(
                 titulo: 'Pendientes',
-                valor: 3,
-                total: 12,
+                valor: _pendientes,
+                total: total,
                 color: AppColors.orange,
               ),
               const SizedBox(height: 14),
               _buildBarraEstado(
                 titulo: 'Rechazadas',
-                valor: 1,
-                total: 12,
+                valor: _rechazadas,
+                total: total,
                 color: AppColors.danger,
               ),
             ],
@@ -476,12 +608,25 @@ class PantallaInicio extends StatelessWidget {
   }
 
   Widget _buildAccesoRapido(BuildContext context) {
+    String mensaje;
+
+    if (_pendientes > 0) {
+      mensaje =
+          'Tienes $_pendientes auditoría(s) pendiente(s). Revisa cuáles faltan por completar o enviar.';
+    } else if (_enRevision > 0) {
+      mensaje =
+          'Tienes $_enRevision auditoría(s) en revisión. Espera la respuesta del jefe de seguridad.';
+    } else {
+      mensaje =
+          'No tienes auditorías pendientes por ahora. Puedes iniciar una nueva auditoría desde el botón +.';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildTituloSeccion(
           titulo: 'Acción recomendada',
-          subtitulo: 'Información de ejemplo para esta primera versión',
+          subtitulo: 'Sugerencia según el estado de tus auditorías',
         ),
         const SizedBox(height: 12),
         Container(
@@ -516,7 +661,7 @@ class PantallaInicio extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Revisa tus auditorías pendientes',
+                      'Revisa tu avance',
                       style: TextStyle(
                         color: Colors.black87,
                         fontSize: 13.5,
@@ -525,7 +670,7 @@ class PantallaInicio extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Tienes 3 auditorías pendientes. Más adelante esta tarjeta se conectará con la base de datos para mostrar información real.',
+                      mensaje,
                       style: TextStyle(
                         color: Colors.grey.shade700,
                         fontSize: 11.5,
