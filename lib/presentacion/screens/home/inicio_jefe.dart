@@ -64,10 +64,16 @@ class _InicioJefeState extends State<InicioJefe> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             aprobado ? 'Aprobar auditoría' : 'Rechazar auditoría',
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -76,15 +82,32 @@ class _InicioJefeState extends State<InicioJefe> {
                 aprobado
                     ? '¿Seguro que deseas aprobar esta auditoría?'
                     : '¿Seguro que deseas rechazar esta auditoría?',
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: comentarioController,
                 maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 13,
+                ),
+                decoration: InputDecoration(
                   hintText: 'Comentario opcional',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 12,
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
                 ),
               ),
             ],
@@ -92,9 +115,17 @@ class _InicioJefeState extends State<InicioJefe> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: AppColors.navy),
+              ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    aprobado ? AppColors.success : AppColors.danger,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () => Navigator.pop(context, true),
               child: Text(aprobado ? 'Aprobar' : 'Rechazar'),
             ),
@@ -126,6 +157,7 @@ class _InicioJefeState extends State<InicioJefe> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No se encontró el ID de auditoría o del jefe'),
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -143,6 +175,7 @@ class _InicioJefeState extends State<InicioJefe> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: aprobado ? AppColors.success : AppColors.danger,
           content: Text(
             aprobado
                 ? 'Auditoría aprobada correctamente'
@@ -157,6 +190,7 @@ class _InicioJefeState extends State<InicioJefe> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: AppColors.danger,
           content: Text(e.toString().replaceAll('Exception: ', '')),
         ),
       );
@@ -195,7 +229,7 @@ class _InicioJefeState extends State<InicioJefe> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.grey.shade100,
       body: SafeArea(
         child: Column(
           children: [
@@ -213,9 +247,9 @@ class _InicioJefeState extends State<InicioJefe> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+          bottom: BorderSide(color: Colors.grey.withOpacity(0.12)),
         ),
       ),
       child: Row(
@@ -225,6 +259,8 @@ class _InicioJefeState extends State<InicioJefe> {
             'AUDITORÍAS',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   letterSpacing: 4,
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w700,
                 ),
           ),
           GestureDetector(
@@ -263,14 +299,18 @@ class _InicioJefeState extends State<InicioJefe> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
                   fontSize: 13,
                 ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _cargarAuditorias,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('Reintentar'),
               ),
             ],
@@ -283,19 +323,19 @@ class _InicioJefeState extends State<InicioJefe> {
       return RefreshIndicator(
         onRefresh: _cargarAuditorias,
         child: ListView(
-          children: const [
-            SizedBox(height: 180),
+          children: [
+            const SizedBox(height: 180),
             Icon(
               Icons.checklist_rounded,
-              color: AppColors.textHint,
+              color: Colors.grey.shade400,
               size: 48,
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Center(
               child: Text(
                 'No hay auditorías disponibles',
                 style: TextStyle(
-                  color: AppColors.textHint,
+                  color: Colors.grey.shade500,
                   fontSize: 13,
                 ),
               ),
@@ -337,9 +377,16 @@ class _InicioJefeState extends State<InicioJefe> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.withOpacity(0.14)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +411,7 @@ class _InicioJefeState extends State<InicioJefe> {
                 child: Text(
                   'Auditoría #$id',
                   style: const TextStyle(
-                    color: AppColors.textPrimary,
+                    color: Colors.black87,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -382,8 +429,8 @@ class _InicioJefeState extends State<InicioJefe> {
           const SizedBox(height: 8),
           Text(
             observaciones,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: Colors.grey.shade700,
               fontSize: 12,
             ),
           ),
@@ -397,7 +444,15 @@ class _InicioJefeState extends State<InicioJefe> {
                       auditoria: auditoria,
                       aprobado: false,
                     ),
-                    icon: const Icon(Icons.close),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.danger,
+                      side: const BorderSide(color: AppColors.danger),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      minimumSize: const Size(0, 42),
+                    ),
+                    icon: const Icon(Icons.close, size: 18),
                     label: const Text('Rechazar'),
                   ),
                 ),
@@ -408,7 +463,15 @@ class _InicioJefeState extends State<InicioJefe> {
                       auditoria: auditoria,
                       aprobado: true,
                     ),
-                    icon: const Icon(Icons.check),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      minimumSize: const Size(0, 42),
+                    ),
+                    icon: const Icon(Icons.check, size: 18),
                     label: const Text('Aprobar'),
                   ),
                 ),
@@ -427,15 +490,15 @@ class _InicioJefeState extends State<InicioJefe> {
         children: [
           Icon(
             icon,
-            color: AppColors.textHint,
+            color: Colors.grey.shade500,
             size: 14,
           ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               texto,
-              style: const TextStyle(
-                color: AppColors.textHint,
+              style: TextStyle(
+                color: Colors.grey.shade600,
                 fontSize: 11,
               ),
             ),
@@ -471,8 +534,8 @@ class _InicioJefeState extends State<InicioJefe> {
         bg = AppColors.orange.withOpacity(0.12);
         break;
       default:
-        color = AppColors.textSecondary;
-        bg = AppColors.textSecondary.withOpacity(0.12);
+        color = Colors.grey.shade700;
+        bg = Colors.grey.withOpacity(0.12);
     }
 
     return Container(
