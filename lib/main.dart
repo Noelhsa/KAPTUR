@@ -4,11 +4,7 @@ import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'package:proyecto_kaptur/presentacion/screens/auth/pantalla_login.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: KapturApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: KapturApp()));
 }
 
 class KapturApp extends StatelessWidget {
