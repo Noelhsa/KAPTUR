@@ -41,20 +41,6 @@ class ApiService {
     return mensajeDefault;
   }
 
-  Future<Map<String, dynamic>> obtenerInicioSupervisor(int idSupervisor) async {
-    try {
-      final response = await _dio.get('/supervisor/inicio/$idSupervisor');
-
-      return Map<String, dynamic>.from(response.data);
-    } on DioException catch (e) {
-      throw Exception(
-        _mensajeError(e, 'Error al obtener el resumen del supervisor'),
-      );
-    } catch (_) {
-      throw Exception('Error inesperado al obtener el resumen del supervisor');
-    }
-  }
-
   // ── Login ────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> login({
@@ -139,6 +125,22 @@ class ApiService {
       );
     } catch (_) {
       throw Exception('Error inesperado al obtener partes de instalación');
+    }
+  }
+
+  // ── Inicio Supervisor ────────────────────────────────────
+
+  Future<Map<String, dynamic>> obtenerInicioSupervisor(int idSupervisor) async {
+    try {
+      final response = await _dio.get('/supervisor/inicio/$idSupervisor');
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener el resumen del supervisor'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener el resumen del supervisor');
     }
   }
 
@@ -241,6 +243,68 @@ class ApiService {
       );
     } catch (_) {
       throw Exception('Error inesperado al aprobar o rechazar auditoría');
+    }
+  }
+
+  // ── Capacitación ─────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> obtenerPersonasCapacitacionSupervisor(
+    int idSupervisor,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/capacitacion/personas/supervisor/$idSupervisor',
+      );
+
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener personas de capacitación'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener personas de capacitación');
+    }
+  }
+
+  Future<Map<String, dynamic>> obtenerResumenCapacitacionSupervisor(
+    int idSupervisor,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/capacitacion/resumen/supervisor/$idSupervisor',
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener resumen de capacitación'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener resumen de capacitación');
+    }
+  }
+
+  Future<Map<String, dynamic>> actualizarEstadoCapacitacion({
+    required int idCapacitacion,
+    required String estado,
+    String? observaciones,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '/capacitacion/personas/$idCapacitacion/estado',
+        data: {
+          'estado': estado,
+          'observaciones': observaciones,
+        },
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al actualizar estado de capacitación'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al actualizar estado de capacitación');
     }
   }
 }
