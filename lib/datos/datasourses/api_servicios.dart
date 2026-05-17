@@ -307,4 +307,122 @@ class ApiService {
       throw Exception('Error inesperado al actualizar estado de capacitación');
     }
   }
+
+  // ── Trabajadores ─────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> obtenerTrabajadores() async {
+    try {
+      final response = await _dio.get('/trabajadores');
+
+      return List<Map<String, dynamic>>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al obtener trabajadores'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al obtener trabajadores');
+    }
+  }
+
+  Future<Map<String, dynamic>> crearTrabajador({
+    required int idRol,
+    required String usuario,
+    required String contrasena,
+    required String nombre,
+    required String apellidos,
+    String? correo,
+    String? telefono,
+    bool activo = true,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/trabajadores',
+        data: {
+          'id_rol': idRol,
+          'usuario': usuario,
+          'contrasena': contrasena,
+          'nombre': nombre,
+          'apellidos': apellidos,
+          'correo': correo,
+          'telefono': telefono,
+          'activo': activo,
+        },
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al crear trabajador'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al crear trabajador');
+    }
+  }
+
+  Future<Map<String, dynamic>> editarTrabajador({
+    required int idUsuario,
+    int? idRol,
+    String? usuario,
+    String? contrasena,
+    String? nombre,
+    String? apellidos,
+    String? correo,
+    String? telefono,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+
+      if (idRol != null) data['id_rol'] = idRol;
+      if (usuario != null) data['usuario'] = usuario;
+      if (contrasena != null && contrasena.trim().isNotEmpty) {
+        data['contrasena'] = contrasena;
+      }
+      if (nombre != null) data['nombre'] = nombre;
+      if (apellidos != null) data['apellidos'] = apellidos;
+      if (correo != null) data['correo'] = correo;
+      if (telefono != null) data['telefono'] = telefono;
+
+      final response = await _dio.put(
+        '/trabajadores/$idUsuario',
+        data: data,
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al editar trabajador'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al editar trabajador');
+    }
+  }
+
+  Future<Map<String, dynamic>> actualizarEstadoTrabajador({
+    required int idUsuario,
+    required bool activo,
+    int? idUsuarioActual,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'activo': activo,
+      };
+
+      if (idUsuarioActual != null) {
+        data['id_usuario_actual'] = idUsuarioActual;
+      }
+
+      final response = await _dio.put(
+        '/trabajadores/$idUsuario/estado',
+        data: data,
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        _mensajeError(e, 'Error al actualizar estado del trabajador'),
+      );
+    } catch (_) {
+      throw Exception('Error inesperado al actualizar estado del trabajador');
+    }
+  }
 }

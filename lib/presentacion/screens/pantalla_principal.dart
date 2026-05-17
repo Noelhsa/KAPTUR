@@ -6,6 +6,7 @@ import 'package:proyecto_kaptur/presentacion/screens/home/inicio_jefe.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_inspecciones.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/auditoria_jefe.dart';
 import 'package:proyecto_kaptur/presentacion/screens/capacitacion/pantalla_capacitacion.dart';
+import 'package:proyecto_kaptur/presentacion/screens/trabajadores/pantalla_trabajadores.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_nueva_inspecciones.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_evaluacion.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_checklist.dart';
@@ -41,6 +42,10 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
           onUserTap: _mostrarMenuUsuario,
         ),
         AuditoriaJefe(
+          usuario: widget.usuario,
+          onUserTap: _mostrarMenuUsuario,
+        ),
+        PantallaTrabajadores(
           usuario: widget.usuario,
           onUserTap: _mostrarMenuUsuario,
         ),
@@ -398,6 +403,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
             esJefe ? 'Historial' : 'Auditoría',
             1,
           ),
+          if (esJefe) _buildNavItem(Icons.groups_rounded, 'Trabajadores', 2),
           if (rol == 'Supervisor')
             _buildNavItem(Icons.school_rounded, 'Capacitación', 2),
           if (rol == 'Supervisor') _buildNavAdd(),
