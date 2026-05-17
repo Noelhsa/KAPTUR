@@ -57,6 +57,64 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
     }
   }
 
+  String _urlEvidencia(String ruta) {
+    if (ruta.startsWith('http')) {
+      return ruta;
+    }
+
+    if (ruta.startsWith('/')) {
+      return 'https://api.kaptur.online$ruta';
+    }
+
+    return 'https://api.kaptur.online/$ruta';
+  }
+
+  bool _esImagen(String ruta) {
+    final r = ruta.toLowerCase();
+
+    return r.endsWith('.jpg') ||
+        r.endsWith('.jpeg') ||
+        r.endsWith('.png') ||
+        r.endsWith('.webp');
+  }
+
+  void _abrirEvidencia(Map<String, dynamic> evidencia) {
+    final ruta = evidencia['ruta_archivo']?.toString() ?? '';
+
+    if (ruta.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta evidencia no tiene archivo asociado'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    if (!_esImagen(ruta)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por ahora solo se pueden visualizar imágenes'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    final url = _urlEvidencia(ruta);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _PantallaVistaEvidencia(
+          url: url,
+          titulo: evidencia['tipo_archivo']?.toString() ?? 'Evidencia',
+          descripcion: evidencia['descripcion']?.toString(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -132,12 +190,16 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
 
   Widget _buildContenido() {
     final cabecera = Map<String, dynamic>.from(_detalle?['cabecera'] ?? {});
+
     final personas =
         (_detalle?['personas'] as List? ?? []).cast<Map<String, dynamic>>();
+
     final actos =
         (_detalle?['actos'] as List? ?? []).cast<Map<String, dynamic>>();
+
     final evidencias =
         (_detalle?['evidencias'] as List? ?? []).cast<Map<String, dynamic>>();
+
     final aprobacionRaw = _detalle?['aprobacion'];
     final Map<String, dynamic>? aprobacion =
         aprobacionRaw == null ? null : Map<String, dynamic>.from(aprobacionRaw);
@@ -194,6 +256,11 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
       descripcion =
           'La auditoría fue enviada al jefe y está esperando una respuesta.';
       icono = Icons.rate_review_outlined;
+    } else if (estado == 'BORRADOR') {
+      titulo = 'Auditoría pendiente';
+      descripcion =
+          'Esta auditoría todavía no ha sido enviada al jefe de seguridad.';
+      icono = Icons.pending_actions_outlined;
     } else {
       titulo = 'Auditoría';
       descripcion = 'Información general de la auditoría seleccionada.';
@@ -487,59 +554,87 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
               ),
             ]
           : evidencias.map((evidencia) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.attach_file,
-                      color: Colors.grey.shade600,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            evidencia['tipo_archivo']?.toString() ?? 'Archivo',
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          if ((evidencia['descripcion'] ?? '')
-                              .toString()
-                              .isNotEmpty)
-                            Text(
-                              evidencia['descripcion'].toString(),
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 11,
-                              ),
-                            ),
-                          if ((evidencia['ruta_archivo'] ?? '')
-                              .toString()
-                              .isNotEmpty)
-                            Text(
-                              evidencia['ruta_archivo'].toString(),
-                              style: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: 10,
-                              ),
-                            ),
-                        ],
+              final ruta = evidencia['ruta_archivo']?.toString() ?? '';
+              final descripcion = evidencia['descripcion']?.toString() ?? '';
+              final tipo = evidencia['tipo_archivo']?.toString() ?? 'Archivo';
+              final esImagen = _esImagen(ruta);
+
+              return GestureDetector(
+                onTap: () => _abrirEvidencia(evidencia),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        esImagen
+                            ? Icons.image_outlined
+                            : Icons.attach_file_outlined,
+                        color: AppColors.navy,
+                        size: 20,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tipo,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (descripcion.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                descripcion,
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                            if (ruta.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                ruta,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                            if (esImagen) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'Toca para ver imagen',
+                                style: TextStyle(
+                                  color: AppColors.navy.withOpacity(0.75),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.grey.shade500,
+                        size: 22,
+                      ),
+                    ],
+                  ),
                 ),
               );
             }).toList(),
@@ -776,5 +871,112 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
     }
 
     return texto;
+  }
+}
+
+class _PantallaVistaEvidencia extends StatelessWidget {
+  final String url;
+  final String titulo;
+  final String? descripcion;
+
+  const _PantallaVistaEvidencia({
+    required this.url,
+    required this.titulo,
+    this.descripcion,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          titulo,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (descripcion != null && descripcion!.trim().isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                color: Colors.black,
+                child: Text(
+                  descripcion!,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4,
+                child: Center(
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        return child;
+                      }
+
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.broken_image_outlined,
+                              color: Colors.white70,
+                              size: 54,
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No se pudo cargar la imagen',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              url,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
