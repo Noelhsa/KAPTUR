@@ -8,9 +8,6 @@ import 'package:proyecto_kaptur/presentacion/screens/inspecciones/auditoria_jefe
 import 'package:proyecto_kaptur/presentacion/screens/capacitacion/pantalla_capacitacion.dart';
 import 'package:proyecto_kaptur/presentacion/screens/trabajadores/pantalla_trabajadores.dart';
 import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_nueva_inspecciones.dart';
-import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_evaluacion.dart';
-import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_checklist.dart';
-import 'package:proyecto_kaptur/presentacion/screens/inspecciones/pantalla_hallazgos.dart';
 
 class PantallaPrincipal extends StatefulWidget {
   final Map<String, dynamic> usuario;
@@ -238,7 +235,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
               _buildOpcionNuevaClaro(
                 icon: Icons.verified_user_outlined,
                 titulo: 'Nueva auditoría',
-                subtitulo: 'Aprobar o rechazar una inspección',
+                subtitulo: 'Crear una nueva auditoría de seguridad',
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -247,48 +244,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                       builder: (_) => PantallaNuevaInspeccion(
                         usuario: widget.usuario,
                       ),
-                    ),
-                  );
-                },
-              ),
-              _buildOpcionNuevaClaro(
-                icon: Icons.engineering_outlined,
-                titulo: 'Evaluación',
-                subtitulo: 'Evaluar EPP de trabajadores',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PantallaEvaluacion(),
-                    ),
-                  );
-                },
-              ),
-              _buildOpcionNuevaClaro(
-                icon: Icons.checklist_outlined,
-                titulo: 'Checklist',
-                subtitulo: 'Controles críticos de seguridad',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PantallaChecklist(),
-                    ),
-                  );
-                },
-              ),
-              _buildOpcionNuevaClaro(
-                icon: Icons.report_problem_outlined,
-                titulo: 'Hallazgos',
-                subtitulo: 'Registrar un hallazgo de seguridad',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PantallaHallazgos(),
                     ),
                   );
                 },
