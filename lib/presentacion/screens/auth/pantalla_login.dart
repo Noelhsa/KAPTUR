@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'package:proyecto_kaptur/datos/datasourses/api_servicios.dart';
+import 'package:proyecto_kaptur/datos/datasourses/biometria_servicio.dart';
 import 'package:proyecto_kaptur/presentacion/screens/pantalla_principal.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,12 +15,22 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usuarioController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  final BiometriaServicio _biometriaServicio = BiometriaServicio();
+
   bool _passwordVisible = false;
-  bool _rememberData = false;
+  bool _usarBiometria = false;
+  bool _biometriaDisponible = false;
+  bool _biometriaGuardada = false;
   bool _isLoading = false;
 
   String? _usuarioError;
   String? _passwordError;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEstadoBiometria();
+  }
 
   @override
   void dispose() {
@@ -28,25 +39,23 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _onIniciarSesion() async {
+  Future<void> _cargarEstadoBiometria() async {
+    final disponible = await _biometriaServicio.biometriaDisponible();
+    final guardada = await _biometriaServicio.biometriaActivada();
+
+    if (!mounted) return;
+
     setState(() {
-      _usuarioError = null;
-      _passwordError = null;
+      _biometriaDisponible = disponible;
+      _biometriaGuardada = guardada;
     });
+  }
 
-    final usuario = _usuarioController.text.trim();
-    final password = _passwordController.text;
-
-    if (usuario.isEmpty) {
-      setState(() => _usuarioError = 'Ingresa tu usuario');
-      return;
-    }
-
-    if (password.isEmpty) {
-      setState(() => _passwordError = 'Ingresa tu contraseña');
-      return;
-    }
-
+  Future<void> _loginConCredenciales({
+    required String usuario,
+    required String password,
+    required bool guardarBiometria,
+  }) async {
     setState(() => _isLoading = true);
 
     try {
@@ -57,12 +66,52 @@ class _LoginScreenState extends State<LoginScreen> {
         contrasena: password,
       );
 
-      print('LOGIN RESPUESTA: $respuesta');
+      debugPrint('LOGIN RESPUESTA: $respuesta');
 
       if (!mounted) return;
 
       if (respuesta['success'] == true) {
         final usuarioLogueado = Map<String, dynamic>.from(respuesta['usuario']);
+
+        if (guardarBiometria) {
+          final disponible = await _biometriaServicio.biometriaDisponible();
+
+          if (disponible) {
+            await _biometriaServicio.guardarCredenciales(
+              usuario: usuario,
+              contrasena: password,
+            );
+
+            if (mounted) {
+              setState(() {
+                _biometriaGuardada = true;
+              });
+            }
+          } else {
+            await _biometriaServicio.borrarCredenciales();
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Este dispositivo no tiene biometría disponible o configurada',
+                  ),
+                  backgroundColor: AppColors.danger,
+                ),
+              );
+            }
+          }
+        } else {
+          await _biometriaServicio.borrarCredenciales();
+
+          if (mounted) {
+            setState(() {
+              _biometriaGuardada = false;
+            });
+          }
+        }
+
+        if (!mounted) return;
 
         Navigator.pushReplacement(
           context,
@@ -95,6 +144,71 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _onIniciarSesion() async {
+    setState(() {
+      _usuarioError = null;
+      _passwordError = null;
+    });
+
+    final usuario = _usuarioController.text.trim();
+    final password = _passwordController.text;
+
+    if (usuario.isEmpty) {
+      setState(() => _usuarioError = 'Ingresa tu usuario');
+      return;
+    }
+
+    if (password.isEmpty) {
+      setState(() => _passwordError = 'Ingresa tu contraseña');
+      return;
+    }
+
+    await _loginConCredenciales(
+      usuario: usuario,
+      password: password,
+      guardarBiometria: _usarBiometria,
+    );
+  }
+
+  Future<void> _onIngresarConHuella() async {
+    setState(() {
+      _usuarioError = null;
+      _passwordError = null;
+    });
+
+    final credenciales = await _biometriaServicio.obtenerCredenciales();
+
+    if (credenciales == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Primero activa el ingreso con huella'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    final autenticado = await _biometriaServicio.autenticar();
+
+    if (!mounted) return;
+
+    if (!autenticado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo validar la huella'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    await _loginConCredenciales(
+      usuario: credenciales['usuario']!,
+      password: credenciales['contrasena']!,
+      guardarBiometria: true,
+    );
   }
 
   @override
@@ -181,25 +295,31 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 24,
                             height: 24,
                             child: Checkbox(
-                              value: _rememberData,
+                              value: _usarBiometria,
                               activeColor: AppColors.orange,
                               side: BorderSide(
                                 color: Colors.white.withOpacity(0.65),
                                 width: 1.2,
                               ),
-                              onChanged: (value) {
-                                setState(() {
-                                  _rememberData = value ?? false;
-                                });
-                              },
+                              onChanged: _biometriaDisponible
+                                  ? (value) {
+                                      setState(() {
+                                        _usarBiometria = value ?? false;
+                                      });
+                                    }
+                                  : null,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Recordar mis datos',
+                              _biometriaDisponible
+                                  ? 'Usar huella para iniciar sesión'
+                                  : 'Huella no disponible',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: _biometriaDisponible
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondary.withOpacity(0.45),
                                 fontSize: 12,
                               ),
                             ),
@@ -225,7 +345,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 18),
+                      if (_biometriaGuardada && _biometriaDisponible) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _onIngresarConHuella,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(
+                                color: Colors.white.withOpacity(0.45),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.fingerprint_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            label: const Text(
+                              'Ingresar con huella',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ] else
+                        const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
                         height: 56,
@@ -311,7 +463,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(width: 8),
                           const Flexible(
                             child: Text(
-                              'Tus datos están protegidos\ncon encriptación de extremo a extremo.',
+                              'Tus datos están protegidos\ncon almacenamiento seguro del dispositivo.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: AppColors.textSecondary,
