@@ -22,6 +22,8 @@ dependencies:
 
   # ── Almacenamiento local ─────────────────────
   shared_preferences: ^2.2.3
+  flutter_secure_storage: ^10.2.0
+  local_auth: ^3.0.1
 
   # ── Fuentes e íconos ─────────────────────────
   google_fonts: ^6.2.1
@@ -33,9 +35,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  local_auth: ^3.0.1
-  flutter_secure_storage: ^10.2.0
-    
+
   flutter_lints: ^3.0.0
   mockito: ^5.4.4          # para pruebas unitarias
   build_runner: ^2.4.9     # genera código automático
