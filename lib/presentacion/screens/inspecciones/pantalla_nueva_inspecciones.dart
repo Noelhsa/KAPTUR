@@ -8,6 +8,7 @@
 //   • id_supervisor tomado del objeto usuario (id_usuario = 2).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:proyecto_kaptur/config/themes/tema_app.dart';
 import 'package:proyecto_kaptur/datos/datasourses/auditoria_completa_servicio.dart';
 import '../../../presentacion/widgets/evidencia_item.dart';
@@ -54,6 +55,9 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   bool _ptVigente = false;
 
   // ── Registro de personas observadas ───────────────────────
+  final _totalPersonasController = TextEditingController();
+  final _personasInternasController = TextEditingController();
+  final _personasExternasController = TextEditingController();
   final _nombrePersonaController = TextEditingController();
   final _apellidosPersonaController = TextEditingController();
   final _observacionPersonaController = TextEditingController();
@@ -67,7 +71,11 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   String? _severidad = 'BAJO';
   final _cantidadPersonasController = TextEditingController(text: '1');
   final _descripcionActoController = TextEditingController();
+  final _nombreActorController = TextEditingController();
+  bool _hayActosInseguros = false;
+  bool _actorInterno = true;
   bool _corregidoEnElMomento = false;
+  final List<Map<String, dynamic>> _actosAgregados = [];
 
   // ── Evidencias ─────────────────────────────────────────────
   final List<EvidenciaData> _evidencias = [EvidenciaData()];
@@ -85,11 +93,15 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   void dispose() {
     _fechaController.dispose();
     _horaController.dispose();
+    _totalPersonasController.dispose();
+    _personasInternasController.dispose();
+    _personasExternasController.dispose();
     _nombrePersonaController.dispose();
     _apellidosPersonaController.dispose();
     _observacionPersonaController.dispose();
     _cantidadPersonasController.dispose();
     _descripcionActoController.dispose();
+    _nombreActorController.dispose();
     _observacionesResumenController.dispose();
     super.dispose();
   }
@@ -145,6 +157,69 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     }
   }
 
+  int _valorEntero(TextEditingController controller) {
+    return int.tryParse(controller.text.trim()) ?? 0;
+  }
+
+  int get _totalPersonasObservadas => _valorEntero(_totalPersonasController);
+  int get _personasInternasTotal => _valorEntero(_personasInternasController);
+  int get _personasExternasTotal => _valorEntero(_personasExternasController);
+
+  int get _personasInsegurasInternas => _actosAgregados
+      .where((acto) => acto['tipo_persona_actor'] == 'INTERNA')
+      .length;
+
+  int get _personasInsegurasExternas => _actosAgregados
+      .where((acto) => acto['tipo_persona_actor'] == 'EXTERNA')
+      .length;
+
+  int get _personasSegurasInternas =>
+      _personasInternasTotal - _personasInsegurasInternas;
+
+  int get _personasSegurasExternas =>
+      _personasExternasTotal - _personasInsegurasExternas;
+
+  int get _totalPersonasInseguras =>
+      _personasInsegurasInternas + _personasInsegurasExternas;
+
+  int get _totalPersonasSeguras =>
+      _personasSegurasInternas + _personasSegurasExternas;
+
+  double get _iai {
+    if (_totalPersonasObservadas <= 0) return 0;
+    final totalPonderado = _actosAgregados.fold<double>(0, (total, acto) {
+      final cantidad = (acto['cantidad_personas'] as num?)?.toDouble() ?? 0;
+      final factor = (acto['factor_severidad'] as num?)?.toDouble() ??
+          _factorSeveridad(acto['nivel_severidad']?.toString());
+      return total + (cantidad * factor);
+    });
+    return (totalPonderado / _totalPersonasObservadas) * 100;
+  }
+
+  double get _ias => 100 - _iai;
+
+  bool get _conteosPersonasValidos {
+    return _totalPersonasObservadas > 0 &&
+        _personasInternasTotal >= 0 &&
+        _personasExternasTotal >= 0 &&
+        _personasInternasTotal + _personasExternasTotal ==
+            _totalPersonasObservadas &&
+        _personasSegurasInternas >= 0 &&
+        _personasSegurasExternas >= 0;
+  }
+
+  double _factorSeveridad(String? severidad) {
+    switch (severidad) {
+      case 'ALTO':
+        return 3;
+      case 'MEDIO':
+        return 1;
+      case 'BAJO':
+      default:
+        return 0.3333;
+    }
+  }
+
   // ══════════════════════════════════════════════════════════
   //  GUARDAR AUDITORÍA → backend
   // ══════════════════════════════════════════════════════════
@@ -156,6 +231,18 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     }
     if (_idTipoInstalacionSel == null) {
       _snack('Selecciona el tipo de instalación', error: true);
+      return;
+    }
+
+    if (!_conteosPersonasValidos) {
+      _snack(
+        'Revisa los conteos: internas + externas debe coincidir con el total y no puede haber mas actos que personas.',
+        error: true,
+      );
+      return;
+    }
+    if (_hayActosInseguros && _actosAgregados.isEmpty) {
+      _snack('Agrega al menos un acto inseguro', error: true);
       return;
     }
 
@@ -184,31 +271,10 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
         }
       }
 
-      // ── Payload personas ───────────────────────────────────
-      final List<Map<String, dynamic>> personasPayload = _personasAgregadas
-          .map((p) => {
-                'nombre': p['nombre'] ?? '',
-                'apellidos': p['apellidos'] ?? '',
-                'tipo_persona': p['tipo'] ?? 'INTERNA',
-                'clasificacion': p['clasificacion'] ?? 'SEGURA',
-                'observaciones': p['observacion'] ?? '',
-              })
-          .toList();
-
       // ── Payload actos ──────────────────────────────────────
-      final List<Map<String, dynamic>> actosPayload = [];
-      if (_idTipoActoSel != null && _idOpcionActoSel != null) {
-        actosPayload.add({
-          'id_tipo_acto': _idTipoActoSel!,
-          'id_opcion_acto': _idOpcionActoSel!,
-          'id_causa': _idCausaSel,
-          'nivel_severidad': _severidad ?? 'BAJO',
-          'cantidad_personas':
-              int.tryParse(_cantidadPersonasController.text.trim()) ?? 1,
-          'descripcion_adicional': _descripcionActoController.text.trim(),
-          'corregido_en_el_acto': _corregidoEnElMomento,
-        });
-      }
+      final List<Map<String, dynamic>> actosPayload = _hayActosInseguros
+          ? List<Map<String, dynamic>>.from(_actosAgregados)
+          : [];
 
       // ── id_supervisor desde el objeto usuario ──────────────
       final int idSupervisor = widget.usuario['id_usuario'] as int? ??
@@ -224,7 +290,10 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
         ptObtenido: _ptExiste,
         ptVigente: _ptVigente,
         observacionesGenerales: _observacionesResumenController.text.trim(),
-        personas: personasPayload,
+        totalPersonasObservadas: _totalPersonasObservadas,
+        personasInternasTotal: _personasInternasTotal,
+        personasExternasTotal: _personasExternasTotal,
+        personas: const [],
         actos: actosPayload,
         evidencias: evidenciasPayload,
       );
@@ -286,9 +355,9 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
                   children: [
                     _buildFormulario(),
                     const SizedBox(height: 20),
-                    _buildSeccionPersonas(),
+                    _buildSeccionConteosPersonas(),
                     const SizedBox(height: 20),
-                    _buildSeccionActosInseguros(),
+                    _buildSeccionActosInsegurosNueva(),
                     const SizedBox(height: 20),
                     _buildSeccionEvidencias(),
                     const SizedBox(height: 20),
@@ -416,6 +485,48 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   // ══════════════════════════════════════════════════════════
   //  SECCIÓN PERSONAS
   // ══════════════════════════════════════════════════════════
+  Widget _buildSeccionConteosPersonas() {
+    return _tarjeta(
+      titulo: 'Registro de personas observadas',
+      children: [
+        _buildCampo(
+          label: 'Total observado:',
+          controller: _totalPersonasController,
+          hint: '0',
+          soloNumeros: true,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 14),
+        _buildCampo(
+          label: 'Internas:',
+          controller: _personasInternasController,
+          hint: '0',
+          soloNumeros: true,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 14),
+        _buildCampo(
+          label: 'Externas:',
+          controller: _personasExternasController,
+          hint: '0',
+          soloNumeros: true,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Internas + externas: ${_personasInternasTotal + _personasExternasTotal} / $_totalPersonasObservadas',
+          style: TextStyle(
+            color: _conteosPersonasValidos || _totalPersonasObservadas == 0
+                ? Colors.grey.shade700
+                : AppColors.danger,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildSeccionPersonas() {
     return _tarjeta(
       titulo: 'Registro de personas observadas',
@@ -568,6 +679,205 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
   // ══════════════════════════════════════════════════════════
   //  SECCIÓN ACTOS INSEGUROS
   // ══════════════════════════════════════════════════════════
+  Widget _buildSeccionActosInsegurosNueva() {
+    return _tarjeta(
+      titulo: 'Registro de actos inseguros',
+      children: [
+        _buildCheckbox(
+          label: 'Hay actos inseguros',
+          valor: _hayActosInseguros,
+          onChanged: (v) => setState(() {
+            _hayActosInseguros = v ?? false;
+            if (!_hayActosInseguros) {
+              _actosAgregados.clear();
+              _limpiarFormularioActo();
+            }
+          }),
+        ),
+        if (_hayActosInseguros) ...[
+          const SizedBox(height: 18),
+          _buildLabelDropdown(
+            label: 'Tipo de acto:',
+            value: _idTipoActoSel,
+            items: _tiposActo
+                .map((t) => DropdownMenuItem<int>(
+                      value: t['id_tipo_acto'] as int,
+                      child: Text(t['nombre']?.toString() ?? ''),
+                    ))
+                .toList(),
+            onChanged: (v) => _onTipoActoCambiado(v),
+          ),
+          const SizedBox(height: 14),
+          _buildLabelDropdown(
+            label: 'Opcion:',
+            value: _idOpcionActoSel,
+            items: _opcionesActo
+                .map((o) => DropdownMenuItem<int>(
+                      value: o['id_opcion_acto'] as int,
+                      child: Text(o['nombre']?.toString() ?? ''),
+                    ))
+                .toList(),
+            onChanged: _idTipoActoSel == null
+                ? null
+                : (v) => setState(() => _idOpcionActoSel = v),
+            hint: _idTipoActoSel == null
+                ? 'Selecciona tipo primero'
+                : 'Selecciona opcion',
+          ),
+          const SizedBox(height: 14),
+          const Text('Severidad:',
+              style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          _buildCheckboxExclusivo(
+              prefijo: '1/3', label: 'BAJO', color: Colors.black87),
+          const SizedBox(height: 4),
+          _buildCheckboxExclusivo(
+              prefijo: '1', label: 'MEDIO', color: Colors.black87),
+          const SizedBox(height: 4),
+          _buildCheckboxExclusivo(
+              prefijo: '3', label: 'ALTO', color: Colors.red),
+          const SizedBox(height: 14),
+          _buildCampo(
+            label: 'Cant. personas:',
+            controller: _cantidadPersonasController,
+            readOnly: true,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCheckbox(
+                  label: 'Interna',
+                  valor: _actorInterno,
+                  onChanged: (v) => setState(() => _actorInterno = true),
+                ),
+              ),
+              Expanded(
+                child: _buildCheckbox(
+                  label: 'Externa',
+                  valor: !_actorInterno,
+                  onChanged: (v) => setState(() => _actorInterno = false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _buildCampo(
+            label: 'Persona:',
+            controller: _nombreActorController,
+            hint: 'Nombre opcional',
+          ),
+          const SizedBox(height: 14),
+          _buildLabelDropdown(
+            label: 'Causa:',
+            value: _idCausaSel,
+            items: _causas
+                .map((c) => DropdownMenuItem<int>(
+                      value: c['id_causa'] as int,
+                      child: Text(
+                        '${c['clave'] ?? ''} - ${c['descripcion'] ?? ''}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ))
+                .toList(),
+            onChanged: (v) => setState(() => _idCausaSel = v),
+            hint: 'Selecciona causa (opcional)',
+          ),
+          const SizedBox(height: 14),
+          const Text('Descripcion adicional:',
+              style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextField(
+              controller: _descripcionActoController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(10),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildCheckbox(
+            label: 'Corregido en el momento',
+            valor: _corregidoEnElMomento,
+            onChanged: (v) =>
+                setState(() => _corregidoEnElMomento = v ?? false),
+          ),
+          const SizedBox(height: 18),
+          Center(
+            child: ElevatedButton(
+              onPressed: _agregarActoInseguro,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Agregar acto inseguro',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white)),
+            ),
+          ),
+          if (_actosAgregados.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            ..._actosAgregados.asMap().entries.map((entry) {
+              final i = entry.key;
+              final acto = entry.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${(acto['nombre_persona_actor'] ?? '').toString().isEmpty ? 'Sin nombre' : acto['nombre_persona_actor']} · ${acto['tipo_persona_actor']} · ${acto['nivel_severidad']}',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          size: 16, color: Colors.redAccent),
+                      onPressed: () =>
+                          setState(() => _actosAgregados.removeAt(i)),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ],
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildSeccionActosInseguros() {
     return _tarjeta(
       titulo: 'Registro de actos inseguros',
@@ -728,6 +1038,19 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     return _tarjeta(
       titulo: 'Resumen de la auditoría',
       children: [
+        _buildResumenLinea('Personas observadas', _totalPersonasObservadas),
+        _buildResumenLinea('Personas internas', _personasInternasTotal),
+        _buildResumenLinea('Personas externas', _personasExternasTotal),
+        _buildResumenLinea('Seguras internas', _personasSegurasInternas),
+        _buildResumenLinea('Seguras externas', _personasSegurasExternas),
+        _buildResumenLinea('Inseguras internas', _personasInsegurasInternas),
+        _buildResumenLinea('Inseguras externas', _personasInsegurasExternas),
+        const Divider(height: 24),
+        _buildResumenLinea('Total seguras', _totalPersonasSeguras),
+        _buildResumenLinea('Total inseguras', _totalPersonasInseguras),
+        _buildResumenLineaDecimal('IAI', _iai),
+        _buildResumenLineaDecimal('IAS', _ias),
+        const SizedBox(height: 18),
         const Text('Observaciones generales:',
             style: TextStyle(
                 color: Colors.black87,
@@ -767,7 +1090,7 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -837,6 +1160,9 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
     required String label,
     required TextEditingController controller,
     String? hint,
+    bool soloNumeros = false,
+    bool readOnly = false,
+    ValueChanged<String>? onChanged,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -858,6 +1184,12 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
             ),
             child: TextField(
               controller: controller,
+              readOnly: readOnly,
+              keyboardType:
+                  soloNumeros ? TextInputType.number : TextInputType.text,
+              inputFormatters:
+                  soloNumeros ? [FilteringTextInputFormatter.digitsOnly] : null,
+              onChanged: onChanged,
               style: const TextStyle(color: Colors.black87, fontSize: 13),
               decoration: InputDecoration(
                 hintText: hint,
@@ -898,6 +1230,54 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
         Text(label,
             style: const TextStyle(color: Colors.black87, fontSize: 13)),
       ],
+    );
+  }
+
+  Widget _buildResumenLinea(String label, int valor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+            ),
+          ),
+          Text(
+            valor.toString(),
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumenLineaDecimal(String label, double valor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.black87, fontSize: 13),
+            ),
+          ),
+          Text(
+            valor.toStringAsFixed(4),
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -942,14 +1322,14 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border:
-            Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.12))),
+        border: Border(
+            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.12))),
       ),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: Icon(Icons.arrow_back_ios_new_rounded,
+            child: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: AppColors.navy, size: 18),
           ),
           const SizedBox(width: 12),
@@ -963,6 +1343,56 @@ class _PantallaNuevaInspeccionState extends State<PantallaNuevaInspeccion> {
         ],
       ),
     );
+  }
+
+  void _agregarActoInseguro() {
+    if (_idTipoActoSel == null || _idOpcionActoSel == null) {
+      _snack('Selecciona tipo y opcion del acto', error: true);
+      return;
+    }
+
+    final nombreActor = _nombreActorController.text.trim();
+    final tipoActor = _actorInterno ? 'INTERNA' : 'EXTERNA';
+    final insegurasInternas =
+        _personasInsegurasInternas + (tipoActor == 'INTERNA' ? 1 : 0);
+    final insegurasExternas =
+        _personasInsegurasExternas + (tipoActor == 'EXTERNA' ? 1 : 0);
+
+    if (insegurasInternas > _personasInternasTotal ||
+        insegurasExternas > _personasExternasTotal) {
+      _snack('Los actos inseguros no pueden superar los conteos de personas',
+          error: true);
+      return;
+    }
+
+    setState(() {
+      _actosAgregados.add({
+        'id_tipo_acto': _idTipoActoSel!,
+        'id_opcion_acto': _idOpcionActoSel!,
+        'id_causa': _idCausaSel,
+        'nivel_severidad': _severidad ?? 'BAJO',
+        'factor_severidad': _factorSeveridad(_severidad),
+        'cantidad_personas': 1,
+        'descripcion_adicional': _descripcionActoController.text.trim(),
+        'corregido_en_el_acto': _corregidoEnElMomento,
+        'tipo_persona_actor': tipoActor,
+        'nombre_persona_actor': nombreActor,
+      });
+      _limpiarFormularioActo();
+    });
+  }
+
+  void _limpiarFormularioActo() {
+    _idTipoActoSel = null;
+    _idOpcionActoSel = null;
+    _idCausaSel = null;
+    _opcionesActo = [];
+    _severidad = 'BAJO';
+    _cantidadPersonasController.text = '1';
+    _descripcionActoController.clear();
+    _nombreActorController.clear();
+    _actorInterno = true;
+    _corregidoEnElMomento = false;
   }
 
   void _agregarPersona() {

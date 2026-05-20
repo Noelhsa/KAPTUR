@@ -274,8 +274,16 @@ class _PantallaGeneracionReporteState extends State<PantallaGeneracionReporte> {
 
   Widget _buildContenido() {
     final cab = _detalle!['cabecera'] as Map<String, dynamic>;
+    final resumenPersonas =
+        Map<String, dynamic>.from(_detalle!['resumen_personas'] ?? {});
+    final totalPersonas = _valorEntero(
+      resumenPersonas['total_personas_observadas'] ??
+          cab['total_personas_observadas'],
+    );
     final personas =
         (_detalle!['personas'] as List).cast<Map<String, dynamic>>();
+    final totalPersonasMostrado =
+        totalPersonas > 0 ? totalPersonas : personas.length;
     final actos = (_detalle!['actos'] as List).cast<Map<String, dynamic>>();
     final evidencias =
         (_detalle!['evidencias'] as List).cast<Map<String, dynamic>>();
@@ -335,12 +343,21 @@ class _PantallaGeneracionReporteState extends State<PantallaGeneracionReporte> {
 
           // ── Personas ───────────────────────────────────────
           _seccion(
-            'Personas observadas (${personas.length})',
+            'Resumen generado',
+            _buildResumenGenerado(resumenPersonas, cab, actos),
+          ),
+          const SizedBox(height: 16),
+
+          _seccion(
+            'Personas observadas ($totalPersonasMostrado)',
             personas.isEmpty
                 ? [
-                    const Text(
-                      'Sin personas registradas',
-                      style: TextStyle(color: Colors.black54, fontSize: 13),
+                    Text(
+                      totalPersonas > 0
+                          ? 'Registro por conteo, sin nombres individuales.'
+                          : 'Sin personas observadas registradas',
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 13),
                     )
                   ]
                 : personas.map((p) => _chipPersona(p)).toList(),
@@ -353,7 +370,7 @@ class _PantallaGeneracionReporteState extends State<PantallaGeneracionReporte> {
             actos.isEmpty
                 ? [
                     const Text(
-                      'Sin actos registrados',
+                      'No se registraron actos inseguros en esta auditorÃ­a',
                       style: TextStyle(color: Colors.black54, fontSize: 13),
                     )
                   ]
@@ -500,6 +517,70 @@ class _PantallaGeneracionReporteState extends State<PantallaGeneracionReporte> {
     );
   }
 
+  List<Widget> _buildResumenGenerado(
+    Map<String, dynamic> resumen,
+    Map<String, dynamic> cabecera,
+    List<Map<String, dynamic>> actos,
+  ) {
+    final total = _valorEntero(
+      resumen['total_personas_observadas'] ??
+          cabecera['total_personas_observadas'],
+    );
+    final internas = _valorEntero(
+      resumen['personas_internas_total'] ?? cabecera['personas_internas_total'],
+    );
+    final externas = _valorEntero(
+      resumen['personas_externas_total'] ?? cabecera['personas_externas_total'],
+    );
+    final segurasInternas = _valorEntero(
+      resumen['personas_seguras_internas'] ??
+          cabecera['personas_seguras_internas'],
+    );
+    final segurasExternas = _valorEntero(
+      resumen['personas_seguras_externas'] ??
+          cabecera['personas_seguras_externas'],
+    );
+    final insegurasInternas = _valorEntero(
+      resumen['personas_inseguras_internas'] ??
+          cabecera['personas_inseguras_internas'],
+    );
+    final insegurasExternas = _valorEntero(
+      resumen['personas_inseguras_externas'] ??
+          cabecera['personas_inseguras_externas'],
+    );
+    final totalSeguras = _valorEntero(resumen['total_personas_seguras']) +
+        (resumen['total_personas_seguras'] == null
+            ? segurasInternas + segurasExternas
+            : 0);
+    final totalInseguras = _valorEntero(resumen['total_personas_inseguras']) +
+        (resumen['total_personas_inseguras'] == null
+            ? insegurasInternas + insegurasExternas
+            : 0);
+    final iai = _valorDecimal(
+      resumen['iai'] ??
+          cabecera['indice_actos_inseguros'] ??
+          _calcularIai(total, actos),
+    );
+    final ias = _valorDecimal(
+      resumen['ias'] ?? cabecera['indice_actos_seguros'] ?? (100 - iai),
+    );
+
+    return [
+      _fila('Observadas', total.toString()),
+      _fila('Internas', internas.toString()),
+      _fila('Externas', externas.toString()),
+      _fila('Seguras internas', segurasInternas.toString()),
+      _fila('Seguras externas', segurasExternas.toString()),
+      _fila('Inseguras internas', insegurasInternas.toString()),
+      _fila('Inseguras externas', insegurasExternas.toString()),
+      const Divider(height: 18),
+      _fila('Total seguras', totalSeguras.toString()),
+      _fila('Total inseguras', totalInseguras.toString()),
+      _fila('IAI', iai.toStringAsFixed(4)),
+      _fila('IAS', ias.toStringAsFixed(4)),
+    ];
+  }
+
   Widget _chipPersona(Map<String, dynamic> p) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -590,6 +671,13 @@ class _PantallaGeneracionReporteState extends State<PantallaGeneracionReporte> {
             const SizedBox(height: 4),
             Text(
               'Causa: ${a['causa']}',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+            ),
+          ],
+          if ((a['nombre_persona_actor'] ?? '').toString().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Persona: ${a['nombre_persona_actor']} (${a['tipo_persona_actor'] ?? '—'})',
               style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
             ),
           ],
@@ -688,5 +776,26 @@ class _PantallaGeneracionReporteState extends State<PantallaGeneracionReporte> {
     if (fecha == null) return '—';
     final s = fecha.toString();
     return s.length >= 16 ? s.substring(0, 16).replaceAll('T', ' ') : s;
+  }
+
+  int _valorEntero(dynamic valor) {
+    if (valor is int) return valor;
+    if (valor is num) return valor.toInt();
+    return int.tryParse(valor?.toString() ?? '') ?? 0;
+  }
+
+  double _valorDecimal(dynamic valor) {
+    if (valor is num) return valor.toDouble();
+    return double.tryParse(valor?.toString() ?? '') ?? 0;
+  }
+
+  double _calcularIai(int totalPersonas, List<Map<String, dynamic>> actos) {
+    if (totalPersonas <= 0) return 0;
+    final totalPonderado = actos.fold<double>(0, (total, acto) {
+      final cantidad = _valorDecimal(acto['cantidad_personas']);
+      final factor = _valorDecimal(acto['factor_severidad']);
+      return total + (cantidad * factor);
+    });
+    return (totalPonderado / totalPersonas) * 100;
   }
 }

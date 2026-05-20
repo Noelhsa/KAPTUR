@@ -190,6 +190,8 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
 
   Widget _buildContenido() {
     final cabecera = Map<String, dynamic>.from(_detalle?['cabecera'] ?? {});
+    final resumenPersonas =
+        Map<String, dynamic>.from(_detalle?['resumen_personas'] ?? {});
 
     final personas =
         (_detalle?['personas'] as List? ?? []).cast<Map<String, dynamic>>();
@@ -218,7 +220,7 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
             const SizedBox(height: 16),
             _buildSeccionAuditoria(cabecera),
             const SizedBox(height: 16),
-            _buildSeccionPersonas(personas),
+            _buildSeccionPersonas(personas, resumenPersonas, cabecera, actos),
             const SizedBox(height: 16),
             _buildSeccionActos(actos),
             const SizedBox(height: 16),
@@ -382,18 +384,24 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
     );
   }
 
-  Widget _buildSeccionPersonas(List<Map<String, dynamic>> personas) {
+  Widget _buildSeccionPersonas(
+    List<Map<String, dynamic>> personas,
+    Map<String, dynamic> resumenPersonas,
+    Map<String, dynamic> cabecera,
+    List<Map<String, dynamic>> actos,
+  ) {
+    final totalPersonas = _valorEntero(
+      resumenPersonas['total_personas_observadas'] ??
+          cabecera['total_personas_observadas'],
+    );
+    final totalPersonasMostrado =
+        totalPersonas > 0 ? totalPersonas : personas.length;
+
     return _buildTarjeta(
-      titulo: 'Personas observadas (${personas.length})',
+      titulo: 'Personas observadas ($totalPersonasMostrado)',
       children: personas.isEmpty
           ? [
-              Text(
-                'Sin personas registradas',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
-              ),
+              ..._buildResumenPersonas(resumenPersonas, cabecera, actos),
             ]
           : personas.map((persona) {
               return Container(
@@ -521,6 +529,18 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
                         ),
                       ),
                     ],
+                    if ((acto['nombre_persona_actor'] ?? '')
+                        .toString()
+                        .isNotEmpty) ...[
+                      const SizedBox(height: 7),
+                      Text(
+                        'Persona: ${acto['nombre_persona_actor']} (${acto['tipo_persona_actor'] ?? '—'})',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                     if ((acto['descripcion_adicional'] ?? '')
                         .toString()
                         .isNotEmpty) ...[
@@ -538,6 +558,80 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
               );
             }).toList(),
     );
+  }
+
+  List<Widget> _buildResumenPersonas(
+    Map<String, dynamic> resumen,
+    Map<String, dynamic> cabecera,
+    List<Map<String, dynamic>> actos,
+  ) {
+    final total = _valorEntero(
+      resumen['total_personas_observadas'] ??
+          cabecera['total_personas_observadas'],
+    );
+    final internas = _valorEntero(
+      resumen['personas_internas_total'] ?? cabecera['personas_internas_total'],
+    );
+    final externas = _valorEntero(
+      resumen['personas_externas_total'] ?? cabecera['personas_externas_total'],
+    );
+    final segurasInternas = _valorEntero(
+      resumen['personas_seguras_internas'] ??
+          cabecera['personas_seguras_internas'],
+    );
+    final segurasExternas = _valorEntero(
+      resumen['personas_seguras_externas'] ??
+          cabecera['personas_seguras_externas'],
+    );
+    final insegurasInternas = _valorEntero(
+      resumen['personas_inseguras_internas'] ??
+          cabecera['personas_inseguras_internas'],
+    );
+    final insegurasExternas = _valorEntero(
+      resumen['personas_inseguras_externas'] ??
+          cabecera['personas_inseguras_externas'],
+    );
+    final totalSeguras = resumen['total_personas_seguras'] == null
+        ? segurasInternas + segurasExternas
+        : _valorEntero(resumen['total_personas_seguras']);
+    final totalInseguras = resumen['total_personas_inseguras'] == null
+        ? insegurasInternas + insegurasExternas
+        : _valorEntero(resumen['total_personas_inseguras']);
+    final iai = _valorDecimal(
+      resumen['iai'] ??
+          cabecera['indice_actos_inseguros'] ??
+          _calcularIai(total, actos),
+    );
+    final ias = _valorDecimal(
+      resumen['ias'] ?? cabecera['indice_actos_seguros'] ?? (100 - iai),
+    );
+
+    if (total == 0) {
+      return [
+        Text(
+          'Sin personas observadas registradas',
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
+          ),
+        ),
+      ];
+    }
+
+    return [
+      _buildFila('Observadas', total.toString()),
+      _buildFila('Internas', internas.toString()),
+      _buildFila('Externas', externas.toString()),
+      _buildFila('Seguras internas', segurasInternas.toString()),
+      _buildFila('Seguras externas', segurasExternas.toString()),
+      _buildFila('Inseguras internas', insegurasInternas.toString()),
+      _buildFila('Inseguras externas', insegurasExternas.toString()),
+      const Divider(height: 18),
+      _buildFila('Total seguras', totalSeguras.toString()),
+      _buildFila('Total inseguras', totalInseguras.toString()),
+      _buildFila('IAI', iai.toStringAsFixed(4)),
+      _buildFila('IAS', ias.toStringAsFixed(4)),
+    ];
   }
 
   Widget _buildSeccionEvidencias(List<Map<String, dynamic>> evidencias) {
@@ -871,6 +965,27 @@ class _PantallaDetalleInspeccionState extends State<PantallaDetalleInspeccion> {
     }
 
     return texto;
+  }
+
+  int _valorEntero(dynamic valor) {
+    if (valor is int) return valor;
+    if (valor is num) return valor.toInt();
+    return int.tryParse(valor?.toString() ?? '') ?? 0;
+  }
+
+  double _valorDecimal(dynamic valor) {
+    if (valor is num) return valor.toDouble();
+    return double.tryParse(valor?.toString() ?? '') ?? 0;
+  }
+
+  double _calcularIai(int totalPersonas, List<Map<String, dynamic>> actos) {
+    if (totalPersonas <= 0) return 0;
+    final totalPonderado = actos.fold<double>(0, (total, acto) {
+      final cantidad = _valorDecimal(acto['cantidad_personas']);
+      final factor = _valorDecimal(acto['factor_severidad']);
+      return total + (cantidad * factor);
+    });
+    return (totalPonderado / totalPersonas) * 100;
   }
 }
 
